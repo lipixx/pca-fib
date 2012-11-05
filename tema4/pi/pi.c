@@ -67,6 +67,28 @@ void set_datasets(void);
   }							
 
 void
+DIVIDE239F (char *x)
+{
+  int k;
+  unsigned q, r, r0, u;
+  r = 0, r0=0;
+  unsigned char *addr;
+  for (k = 0; k <= N4; k++, x++)
+    {
+      /* q = d25[r][*x][_Q]; */
+      /* r = d25[r][*x][_R]; */
+      /* *x = q; */
+      addr = d239[r][*x];
+      *x = *(addr + _Q);
+      r = *addr;
+
+      addr = d239[r0][*x];
+      *x = *(addr + _Q);
+      r0 = *addr;
+    }
+}
+
+void
 MULTIPLY (char *x)
 {
   int j, k, n;
@@ -117,7 +139,8 @@ SUBTRACT (char *x, char *y, char *z)
   for (k = N4; k >= 0; k--, x--, y--, z--)
     {
       v = *y - *z;     
-      *x = *(_SUBS_YZ+v);      
+      //      *x = *(_SUBS_YZ+v);      
+      *x = SUBS_YZ[v+9];
       *(z - 1) = *(z - 1) + (v < 0);
 
       /* /\*Alternatives*\/ */
@@ -187,8 +210,8 @@ calculate (void)
       SUBTRACT (a, c, a);
       DIVIDE(a,d25,steps,rest);
       SUBTRACT (b, c, b);
-      DIVIDE(b,d239,steps,rest);
-      DIVIDE(b,d239,steps,rest);
+      DIVIDE239F(b);
+      //      DIVIDE239F(b);
     }
 
   for (j=0; j<250; j++)
