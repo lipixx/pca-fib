@@ -135,7 +135,6 @@ SUBTRACTF (char *x, char *y, char *z)
       v = *y - *x;
       *x = SUBS_YZ[v+9];
       *(x - 1) = *(x - 1) + (v < 0);
-
     }
 }
 
