@@ -8,15 +8,14 @@ unsigned char d5[5][10][2];
 unsigned char mul[4][10][2];
 char a[10240], b[10240], c[10240];
 char SUBS_YZ[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-const char * _SUBS_YZ = SUBS_YZ+9;
 
 void calculate (void);
 void progress (void);
 void epilog (void);
 void set_datasets(void);
 
-#define DIV_UNROLL 6  /*Best unroll value: 6*/
-#define LDIV_UNROLL 4 /*Best unroll value: 4*/
+#define DIV_UNROLL 8 /*Best unroll value: 6*/
+#define LDIV_UNROLL 8 /*Best unroll value: 4*/
 #define CHAR_BIT 8
 #define _R 0
 #define _Q 1
@@ -45,6 +44,8 @@ void set_datasets(void);
       DIV_UN(addr,map,r,_x,_Q);						\
       DIV_UN(addr,map,r,_x,_Q);						\
       DIV_UN(addr,map,r,_x,_Q);						\
+      DIV_UN(addr,map,r,_x,_Q);						\
+      DIV_UN(addr,map,r,_x,_Q);						\
     }									\
   for (k = 0; k <rest; k++)						\
     {									\
@@ -62,16 +63,20 @@ void set_datasets(void);
 	LDIV_UN(r,u,q,n,x);				\
 	LDIV_UN(r,u,q,n,x);				\
 	LDIV_UN(r,u,q,n,x);				\
+	LDIV_UN(r,u,q,n,x);				\
+	LDIV_UN(r,u,q,n,x);				\
+	LDIV_UN(r,u,q,n,x);				\
+	LDIV_UN(r,u,q,n,x);				\
 	LDIV_UN(r,u,q,n,x); }				\
     for (k = 0; k < rest; k++, x++) LDIV_UN(r,u,q,n,x);	\
   }							
 
-#define DIVIDE239F(_x)				\
+#define DIVIDE239F(matrix_addr)			\
 { int k;					\
   unsigned q, r, r0, u;				\
   unsigned char *addr;				\
   char *x;					\
-  x = _x;					\
+  x = matrix_addr;				\
   r = 0, r0=0;					\
   for (k = 0; k <= N4; k++, x++)		\
     {						\
@@ -110,6 +115,31 @@ SET (char *x, int n)
 }
 
 void
+SUBTRACTF (char *x, char *y, char *z)
+{
+  int j, k;
+  unsigned q, r, u;
+  char v;
+  x += N4;
+  y += N4;
+  z += N4;
+
+  for (k = N4; k >= 0; k--, x--, y--, z--)
+    {
+      /*SUBTRACT (a,c,a)*/
+      v = *y - *z;     
+      *z = SUBS_YZ[v+9];
+      *(z - 1) = *(z - 1) + (v < 0);
+
+      /*SUBTRACT (b,c,b)*/
+      v = *y - *x;
+      *x = SUBS_YZ[v+9];
+      *(x - 1) = *(x - 1) + (v < 0);
+
+    }
+}
+
+void
 SUBTRACT (char *x, char *y, char *z)
 {
   int j, k;
@@ -119,33 +149,11 @@ SUBTRACT (char *x, char *y, char *z)
   y += N4;
   z += N4;
 
-  /*Original Version*/
-  /* for (k = N4; k >= 0; k--, x--, y--, z--) */
-  /*   { */
-  /*     v = *y - *z; */
-  /*     if (v < 0)		//HEAVY */
-  /* 	{ */
-  /* 	  *x = v + 10; */
-  /* 	  *(z - 1) = *(z - 1) + 1; */
-  /* 	} */
-  /*     else */
-  /* 	*x = v; */
-  /*   } */
-
   for (k = N4; k >= 0; k--, x--, y--, z--)
     {
       v = *y - *z;     
-      //*x = *(_SUBS_YZ+v);      
       *x = SUBS_YZ[v+9];
       *(z - 1) = *(z - 1) + (v < 0);
-
-      /* /\*Alternatives*\/ */
-      /* *x = v + (v>>(sizeof(char)*CHAR_BIT -1) & 0xA); */
-      /* *x = v + ((v<0) * 10); //Slowest */
-      
-      /* /\*Hints*\/ */
-      /* printf("Max entre %i i %i = %i\n",*y,*z,*x^((*x ^ *y) & -(*x < *y))); */
-      /* printf("Abs de %i = %i\n",v, (v+(v >> sizeof(char) * 8 - 1))^(v >> sizeof(char) * 8 - 1)); */      
     }
 }
 
@@ -173,6 +181,7 @@ SUBTRACT_MUL (char *x, char *z)
       r = mul[r][*x][_R];
       *x = q;
     }
+
 }
 
 int
@@ -202,9 +211,8 @@ calculate (void)
     {
       SET (c, 1);
       LONGDIV (c, j);
-      SUBTRACT (a, c, a);
+      SUBTRACTF(b,c,a);    
       DIVIDE(a,d25,steps,rest);
-      SUBTRACT (b, c, b);    
       DIVIDE239F(b);
     }
 
