@@ -3,12 +3,11 @@
 #include <stdlib.h>
 int N, N4;
 //Es necessari tenir unsigned o ens basten char?
-unsigned d239[239][10][2];
-unsigned d25[25][10][2];
-unsigned d5[5][10][2];
-unsigned mul[4][10][2];
+unsigned char d239[239][10][2];
+unsigned char d25[25][10][2];
+unsigned char d5[5][10][2];
+unsigned char mul[4][10][2];
 char a[10240], b[10240], c[10240];
-char string[100];
 char SUBS_YZ[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 char * _SUBS_YZ = SUBS_YZ+9;
 
@@ -36,7 +35,7 @@ void set_datasets(void);
   x++;						\
 
 #define DIVIDE(matrix_addr,map,steps,rest)				\
-  {  int k; unsigned q, r, u, * addr; char *_x;		\
+  {  int k; unsigned char q, r, u, * addr; char *_x;		\
   _x = matrix_addr;							\
   r = 0;								\
   for (k = 0; k <steps; k++)						\
@@ -72,7 +71,7 @@ void
 MULTIPLY (char *x)
 {
   int j, k, n;
-  unsigned q, r, u;
+  unsigned char q, r, u;
   r = 0;
   x += N4;
   /*
@@ -119,7 +118,7 @@ SUBTRACT (char *x, char *y, char *z)
   for (k = N4; k >= 0; k--, x--, y--, z--)
     {
       v = *y - *z;     
-      *x = *(_SUBS_YZ+v);
+      *x = *(_SUBS_YZ+v);      
       *(z - 1) = *(z - 1) + (v < 0);
 
       /* /\*Alternatives*\/ */
@@ -186,10 +185,8 @@ calculate (void)
     {
       SET (c, 1);
       LONGDIV (c, j);
-
       SUBTRACT (a, c, a);
       DIVIDE(a,d25,steps,rest);
-
       SUBTRACT (b, c, b);
       DIVIDE(b,d239,steps,rest);
       DIVIDE(b,d239,steps,rest);
@@ -205,7 +202,6 @@ calculate (void)
   DIVIDE(a,d5,steps,rest);
   SUBTRACT (b, c, b);
   DIVIDE(b,d239,steps,rest);
-
   /*Loop Fusion, provar-ho al servidor*/
   /*SUBTRACT_MUL(a,b);*/
   MULTIPLY (a);
