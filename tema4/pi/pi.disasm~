@@ -1,0 +1,46 @@
+08048612 <SUBTRACT>:
+ 8048612:       55                      push   %ebp
+ 8048613:       89 e5                   mov    %esp,%ebp
+ 8048615:       83 ec 10                sub    $0x10,%esp
+ 8048618:       a1 34 23 05 08          mov    0x8052334,%eax  // x+=N4
+ 804861d:       01 45 08                add    %eax,0x8(%ebp)
+ 8048620:       a1 34 23 05 08          mov    0x8052334,%eax  //y+=N4
+ 8048625:       01 45 0c                add    %eax,0xc(%ebp)
+ 8048628:       a1 34 23 05 08          mov    0x8052334,%eax  //z+=N4
+ 804862d:       01 45 10                add    %eax,0x10(%ebp)
+ 8048630:       a1 34 23 05 08          mov    0x8052334,%eax
+ 8048635:       89 45 fc                mov    %eax,-0x4(%ebp) //k=N4 (for)
+
+ 8048638:       eb 55                   jmp    804868f <SUBTRACT+0x7d> ----
+ 804863a:       8b 45 0c                mov    0xc(%ebp),%eax
+ 804863d:       0f b6 00                movzbl (%eax),%eax  //Mov from memory and zero extend
+ 8048640:       89 c2                   mov    %eax,%edx
+ 8048642:       8b 45 10                mov    0x10(%ebp),%eax
+ 8048645:       0f b6 00                movzbl (%eax),%eax
+ 8048648:       89 d1                   mov    %edx,%ecx
+ 804864a:       28 c1                   sub    %al,%cl  //lowest bytes of eax and ecx
+ 804864c:       89 c8                   mov    %ecx,%eax
+ 804864e:       88 45 fb                mov    %al,-0x5(%ebp)
+ 8048651:       8b 15 40 b0 04 08       mov    0x804b040,%edx
+ 8048657:       0f be 45 fb             movsbl -0x5(%ebp),%eax
+ 804865b:       01 d0                   add    %edx,%eax
+ 804865d:       0f b6 10                movzbl (%eax),%edx
+ 8048660:       8b 45 08                mov    0x8(%ebp),%eax
+ 8048663:       88 10                   mov    %dl,(%eax)
+ 8048665:       8b 45 10                mov    0x10(%ebp),%eax
+ 8048668:       8d 50 ff                lea    -0x1(%eax),%edx
+ 804866b:       8b 45 10                mov    0x10(%ebp),%eax
+ 804866e:       83 e8 01                sub    $0x1,%eax
+ 8048671:       0f b6 00                movzbl (%eax),%eax
+ 8048674:       0f b6 4d fb             movzbl -0x5(%ebp),%ecx
+ 8048678:       c0 e9 07                shr    $0x7,%cl
+ 804867b:       01 c8                   add    %ecx,%eax
+ 804867d:       88 02                   mov    %al,(%edx)
+ 804867f:       83 6d fc 01             subl   $0x1,-0x4(%ebp) // k--
+ 8048683:       83 6d 08 01             subl   $0x1,0x8(%ebp)  // 
+ 8048687:       83 6d 0c 01             subl   $0x1,0xc(%ebp)  //
+ 804868b:       83 6d 10 01             subl   $0x1,0x10(%ebp) //
+ 804868f:       83 7d fc 00             cmpl   $0x0,-0x4(%ebp) // k >=0
+ 8048693:       79 a5                   jns    804863a <SUBTRACT+0x28> ---
+ 8048695:       c9                      leave  
+ 8048696:       c3                      ret    
