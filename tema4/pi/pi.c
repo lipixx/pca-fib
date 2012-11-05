@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 int N, N4;
-//Es necessari tenir unsigned o ens basten char?
 unsigned char d239[239][10][2];
 unsigned char d25[25][10][2];
 unsigned char d5[5][10][2];
@@ -172,12 +171,12 @@ main (int argc, char *argv[])
 void
 calculate (void)
 {
-  int j;
+  int j,steps,rest;
 
   N4 = N + 4;
 
-  int steps = (N+5) / DIV_UNROLL;
-  int rest = (N+5) - steps * DIV_UNROLL;  
+  steps = (N+5) / DIV_UNROLL;
+  rest = (N+5) - steps * DIV_UNROLL;  
 
   SET (a, 0);
   SET (b, 0);
