@@ -66,27 +66,22 @@ void set_datasets(void);
     for (k = 0; k < rest; k++, x++) LDIV_UN(r,u,q,n,x);	\
   }							
 
-void
-DIVIDE239F (char *x)
-{
-  int k;
-  unsigned q, r, r0, u;
-  r = 0, r0=0;
-  unsigned char *addr;
-  for (k = 0; k <= N4; k++, x++)
-    {
-      /* q = d25[r][*x][_Q]; */
-      /* r = d25[r][*x][_R]; */
-      /* *x = q; */
-      addr = d239[r][*x];
-      *x = *(addr + _Q);
-      r = *addr;
-
-      addr = d239[r0][*x];
-      *x = *(addr + _Q);
-      r0 = *addr;
-    }
-}
+#define DIVIDE239F(_x)				\
+{ int k;					\
+  unsigned q, r, r0, u;				\
+  unsigned char *addr;				\
+  char *x;					\
+  x = _x;					\
+  r = 0, r0=0;					\
+  for (k = 0; k <= N4; k++, x++)		\
+    {						\
+      addr = d239[r][*x];			\
+      *x = *(addr + _Q);			\
+      r = *addr;				\
+      addr = d239[r0][*x];			\
+      *x = *(addr + _Q);			\
+      r0 = *addr;				\
+    }}
 
 void
 MULTIPLY (char *x)
