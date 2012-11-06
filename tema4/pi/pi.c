@@ -2,93 +2,73 @@
 #include <stdio.h>
 #include <stdlib.h>
 int N, N4;
+char a[10240], b[10240], c[10240];
 unsigned char d239[239][10][2];
 unsigned char d25[25][10][2];
 unsigned char d5[5][10][2];
 unsigned char mul[4][10][2];
-char a[10240], b[10240], c[10240];
-char SUBS_YZ[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+char SUBS_YZ[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+char * _SUBS_YZ = SUBS_YZ+10;
 
+#define _R 0
+#define _Q 1
+void set_datasets ();
 void calculate (void);
 void progress (void);
 void epilog (void);
-void set_datasets(void);
 
-#define DIV_UNROLL 8 /*Best unroll value: 6*/
-#define LDIV_UNROLL 1  /*Best unroll value: 4*/
-#define CHAR_BIT 8
-#define _R 0
-#define _Q 1
-#define DIV_UN(addr,map,r,_x,_Q)			\
-  addr = map[r][*_x];					\
-  *_x = *(addr + _Q);					\
-  r = *addr;						\
-  _x++;							\
+void
+DIVIDE (char *x, unsigned char map[][10][2])
+{
+  int k;
+  unsigned char q, r, u;
+  unsigned char *addr;
+  r = 0;
+  for (k = 0; k <= N4; k++, x++)
+    {
+      addr = map[r][*x];
+      *x = *(addr + _Q);
+      r = *addr;
+    }
+}
 
-#define LDIV_UN(r,u,q,n,x)			\
-  u = r * 10 + *x;				\
-  q = u / n;					\
-  r = u - q * n;				\
-  *x = q;					\
-  x++;						\
+void
+DIVIDEF (char *x, unsigned char map[][10][2])
+{
+  int k;
+  unsigned char q, r0,r1, u;
+  unsigned char *addr;
+  r0 = 0;
+  r1 = 0;
+  for (k = 0; k <= N4; k++, x++)
+    {
+      addr = map[r0][*x];
+      *x = *(addr + _Q);
+      r0 = *addr;
 
-#define DIVIDE(matrix_addr,map,steps,rest)				\
-  {  int k; unsigned char q, r, u, * addr; char *_x;			\
-  _x = matrix_addr;							\
-  r = 0;								\
-  for (k = 0; k <steps; k++)						\
-    {									\
-      DIV_UN(addr,map,r,_x,_Q);						\
-      DIV_UN(addr,map,r,_x,_Q);						\
-      DIV_UN(addr,map,r,_x,_Q);						\
-      DIV_UN(addr,map,r,_x,_Q);						\
-      DIV_UN(addr,map,r,_x,_Q);						\
-      DIV_UN(addr,map,r,_x,_Q);						\
-      DIV_UN(addr,map,r,_x,_Q);						\
-      DIV_UN(addr,map,r,_x,_Q);						\
-    }									\
-  for (k = 0; k <rest; k++)						\
-    {									\
-      DIV_UN(addr,map,r,_x,_Q);						\
-    }}
+      addr = map[r1][*x];
+      *x = *(addr + _Q);
+      r1 = *addr;
 
-#define LONGDIV(xaddr,n,lsteps,lrest)			\
-  { int k; unsigned q, r, u; char *x;			\
-    x = xaddr;						\
-    r = 0;						\
-    for (k = 0; k < lsteps; k++)			\
-      {							\
-	LDIV_UN(r,u,q,n,x);				\
-	LDIV_UN(r,u,q,n,x);				\
-	LDIV_UN(r,u,q,n,x);				\
-	LDIV_UN(r,u,q,n,x);				\
-	LDIV_UN(r,u,q,n,x);				\
-	LDIV_UN(r,u,q,n,x);				\
-	LDIV_UN(r,u,q,n,x);				\
-	LDIV_UN(r,u,q,n,x); }				\
-    for (k = 0; k < lrest; k++, x++) LDIV_UN(r,u,q,n,x);	\
-  }							
-//AQUI HI HA UN ERROR, l'X++ de LONGDIV pel segon bucle, no hi ha de ser!
-#define DIVIDEF(m1_addr,matrix_addr)		\
-{ int k;					\
-  unsigned q, r, r0,r1, u;			\
-  unsigned char *addr;				\
-  char *x,*y;					\
-  x = matrix_addr;				\
-  y = m1_addr;					\
-  r = 0, r0 = 0,r1 = 0;				\
-  for (k = 0; k <= N4; k++, x++,y++)		\
-    {						\
-      addr = d25[r1][*y];			\
-      *y = *(addr + _Q);			\
-      r1 = *addr;				\
-      addr = d239[r][*x];			\
-      *x = *(addr + _Q);			\
-      r = *addr;				\
-      addr = d239[r0][*x];			\
-      *x = *(addr + _Q);			\
-      r0 = *addr;				\
-    }}
+    }
+}
+
+
+void
+LONGDIV (char *x, int n)
+{
+  int k;
+  unsigned q, r, u;
+  
+  r = 0;
+  for (k = 0; k <= N4; k++, x++)
+    {
+      u = r * 10 + *x;
+      q = u / n;
+      r = u - q * n;
+      *x = q;
+    }
+}
 
 void
 MULTIPLY (char *x)
@@ -116,27 +96,7 @@ SET (char *x, int n)
   *x = n;
 }
 
-/* void */
-/* SUBTRACTF (char *x, char *y, char *z) */
-#define SUBTRACTF(_x,_y,_z)			\
-  {						\
-  int j, k;					\
-  unsigned q, r, u;				\
-  char v,*x,*y,*z;				\
-  x = _x + N4;					\
-  y = _y + N4;					\
-  z = _z + N4;					\
-  for (k = N4; k >= 0; k--, x--, y--, z--)	\
-    {						\
-  v = *y - *z;					\
-  *z = SUBS_YZ[v+10];				\
-  *(z - 1) = *(z - 1) + (v < 0);		\
-  v = *y - *x;					\
-  *x = SUBS_YZ[v+10];				\
-  *(x - 1) = *(x - 1) + (v < 0);		\
-    }}
-
-void
+ void
 SUBTRACT (char *x, char *y, char *z)
 {
   int j, k;
@@ -145,40 +105,12 @@ SUBTRACT (char *x, char *y, char *z)
   x += N4;
   y += N4;
   z += N4;
-
   for (k = N4; k >= 0; k--, x--, y--, z--)
     {
-      v = *y - *z;     
-      *x = SUBS_YZ[v+10];
+      v = *y - *z;
+      *x = *(_SUBS_YZ+v);
       *(z - 1) = *(z - 1) + (v < 0);
     }
-}
-
-void
-SUBTRACT_MUL (char *x, char *z)
-{
-  int j, k;
-  char v;
-  unsigned char q,r,u,r0;
-  r = 0,r0=0;
-  x += N4;
-  z += N4;
-
-  for (k = N4; k >= 0; k--, x--, z--)
-    {
-      q = mul[r0][*x][_Q];
-      r0 = mul[r0][*x][_R];
-      *x = q;
-
-      v = *x - *z;     
-      *x = SUBS_YZ[v+10];
-      *(z - 1) = *(z - 1) + (v < 0);
-      
-      q = mul[r][*x][_Q];
-      r = mul[r][*x][_R];
-      *x = q;
-    }
-
 }
 
 int
@@ -192,117 +124,35 @@ main (int argc, char *argv[])
   return 0;
 }
 
-#define LDIVF_UN(r,u,q,n,x)			\
-  u = r * 10;					\
-  q = u / n;					\
-  r = u - q * n;				\
-  *x = q;					\
-  x++;						\
-
-/* void LONGDIVSUBF( char *x, int n, int lsteps,int lrest, char *_y, char *_z) */
-/* { */
-/*   /\*x = c, y = b, z = a *\/ */
-/*     int j, k; */
-/*     unsigned q, r, u, v; */
-/*     char *_x; */
-
-/*     x[0] = 0; */
-/*     _x = x + N4; */
-/*     _y += N4; */
-/*     _z += N4; */
-
-/*     u = 0; */
-/*     r = 1;                        */
-/*     q = 1;     */
-/*     /\* lsteps = 1250; *\/ */
-/*     /\* lrest = 5; *\/ */
-/*     x++; */
-       
-/*     for( k = 1; k<=N4; _x--,_y--,_z--,k++)                */
-/*       { 	 */
-/* 	LDIVF_UN(r,u,q,n,x); */
-/* 	v = *_y - *_z;				 */
-/* 	*_z = SUBS_YZ[v+10];		 */
-/* 	*(_z - 1) = *(_z - 1) + (v < 0); */
-
-/* 	v = *_y - *_x;			 */
-/* 	*_x = SUBS_YZ[v+10];		 */
-/* 	*(_x - 1) = *(_x - 1) + (v < 0);	        */
-/*       } */
-/*     v = *_y - *_z;				 */
-/*     *_z = SUBS_YZ[v+10];		 */
-/*     *(_z - 1) = *(_z - 1) + (v < 0); */
-/*     v = *_y - *_x;			 */
-/*     *_x = SUBS_YZ[v+10];		 */
-/*     *(_x - 1) = *(_x - 1) + (v < 0);	        */
-    
-/* } */
-
-void LONGDIVF( char *x, int n, int lsteps,int lrest)
-{
-  /*char *x = c */
-    int j, k;
-    unsigned q, r, u, v;
-    x[0] = 0;
-    u = 0;
-    r = 1;                       
-    q = 1;    
-    /* lsteps = 1250; */
-    /* lrest = 5; */
-    x++;
-    for( k = 1; k<lsteps; k++)               
-      { 	
-	LDIVF_UN(r,u,q,n,x);
-      }    
-    for( k = 0; k<lrest; k++)               
-      { 	
-	LDIVF_UN(r,u,q,n,x);
-      }
-}
 void
 calculate (void)
 {
-  int j, steps, rest,lsteps,lrest;
-
+  int j;
   N4 = N + 4;
-
-  steps = (N+5) / DIV_UNROLL;
-  rest = (N+5) - steps * DIV_UNROLL;
-  lsteps = (N+5) / LDIV_UNROLL;			
-  lrest = (N+5) - lsteps * LDIV_UNROLL;		
-
   SET (a, 0);
   SET (b, 0);
   for (j = 2 * N4 + 1; j >= 3; j -= 2)
     {
-      // SET(c,1);
-      //LONGDIV(c,j);
-      LONGDIVF (c, j,lsteps,lrest);
-      SUBTRACTF(b,c,a);
-      
-      //LONGDIVSUBF(c,j,lsteps,lrest,b,a);
-      
-      DIVIDEF(a,b);
+      SET (c, 1);
+      LONGDIV (c, j);
+      SUBTRACT (a, c, a);
+      DIVIDE (a,d25);
+      SUBTRACT (b, c, b);
+      DIVIDEF(b,d239);
+      /* DIVIDE (b,d239); */
+      /* DIVIDE (b,d239); */
     }
-
-  for (j=0; j<250; j++)
-    {
-      printf("........................................");
-    }
-  printf(".....");
   SET (c, 1);
   SUBTRACT (a, c, a);
-  DIVIDE(a,d5,steps,rest);
+  DIVIDE (a,d5);
   SUBTRACT (b, c, b);
-  DIVIDE(b,d239,steps,rest);
-  /*Loop Fusion, provar-ho al servidor*/
-  /*SUBTRACT_MUL(a,b);*/
+  DIVIDE (b,d239);
   MULTIPLY (a);
   SUBTRACT (a, a, b);
   MULTIPLY (a);
 }
 
-void
+ void
 progress (void)
 {
   printf (".");
@@ -311,22 +161,28 @@ progress (void)
 void
 epilog (void)
 {
-  int j;
-  {
-    fprintf (stdout, " \n3.");
-    for (j = 1; j <= N; j++)
+  int j,k,n;
+  for (j=0; j<125; j++)
+    {
+      printf("................................................................................");
+    }
+  printf("..... \n3.");
+  
+    for (n = 0, j = 1, k = 1; j <= N; j+=5, k++)
       {
-	fprintf (stdout, "%d", a[j]);
-	if (j % 5 == 0)
-	  if (j % 50 == 0)
-	    if (j % 250 == 0)
-	      fprintf (stdout, "    <%d>\n\n   ", j);
+	fprintf (stdout, "%d%d%d%d%d", a[j],a[j+1],a[j+2],a[j+3],a[j+4]);
+	if (k == 10)
+	  {
+	    k = 0;
+	    n += 50;
+	    if (n % 250 == 0)
+	      fprintf (stdout, "    <%d>\n\n   ", n);
 	    else
 	      fprintf (stdout, "\n   ");
-	  else
-	    fprintf (stdout, " ");
+	  }
+	else
+	  fprintf (stdout, " ");
       }
-  }
 }
 
 void
@@ -339,7 +195,7 @@ set_datasets ()
       for ( x=0; x<10; x++)
 	{
 	  unsigned _q = 4 * x + r;
-	  unsigned _r = _q / 10;
+	  unsigned _r = _q * 0.1;
 	  mul[r][x][_R] = _r;
 	  mul[r][x][_Q] = _q - _r * 10;
 	  
@@ -368,7 +224,7 @@ set_datasets ()
       for (x = 0; x < 10; x++)
 	{
 	  u = r_10 + x;
-	  q = u / 25;
+	  q = u * 0.04;
 	  d25[r][x][_R] = u - q * 25;
 	  d25[r][x][_Q] = q;
 	}
@@ -382,7 +238,7 @@ set_datasets ()
       for (x = 0; x < 10; x++)
 	{
 	  u = r_10 + x;
-	  q = u / 5;
+	  q = u * 0.2;
 	  d5[r][x][_R] = u - q * 5;
 	  d5[r][x][_Q] = q;
 	}
