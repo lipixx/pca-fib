@@ -119,7 +119,7 @@ SUBTRACT (char *x, char *y, char *z)
 }
 
 void
-SUBTRACTF (char*a,char*c,char*z)
+SUBTRACTF (char*a,char*c,char*b)
 {
   /*x=a, y=b, z=c*/
   /* SUBTRACT (a, c, a); */
@@ -130,11 +130,16 @@ SUBTRACTF (char*a,char*c,char*z)
   char v;
   a += N4;
   c += N4;
-  for (k = N4; k >= 0; k--, a--, c--)
+  b += N4;
+  for (k = N4; k >= 0; k--, a--, b--, c--)
     {
       v = *c - *a;
       *a = *(_SUBS+v);
       *(a - 1) = *(a - 1) + (v < 0);
+
+      v = *c - *b;
+      *b = *(_SUBS+v);
+      *(b - 1) = *(b - 1) + (v < 0);
     }
 }
 
@@ -169,8 +174,7 @@ calculate (void)
     {
       SET (c, 1);
       LONGDIV (c, j);
-      SUBTRACTF(a,c,a);
-      SUBTRACTF(b,c,b);
+      SUBTRACTF(a,c,b);
       DIVIDEF(b,a);
     }
   SET (c, 1);
