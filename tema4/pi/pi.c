@@ -15,7 +15,7 @@ void epilog (void);
 void set_datasets(void);
 
 #define DIV_UNROLL 8 /*Best unroll value: 6*/
-#define LDIV_UNROLL 4 /*Best unroll value: 4*/
+#define LDIV_UNROLL 1  /*Best unroll value: 4*/
 #define CHAR_BIT 8
 #define _R 0
 #define _Q 1
@@ -212,9 +212,6 @@ void LONGDIVF( char *x, int n, int lsteps,int lrest)
     x++;
     for( k = 1; k<lsteps; k++)               
       { 	
-	LDIVF_UN(r,u,q,n,x);
-	LDIVF_UN(r,u,q,n,x);
-	LDIVF_UN(r,u,q,n,x);
 	LDIVF_UN(r,u,q,n,x);
       }    
     for( k = 0; k<lrest; k++)               

@@ -2,23 +2,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 int N, N4;
-//Es necessari tenir unsigned o ens basten char?
-unsigned d239[239][10][2];
-unsigned d25[25][10][2];
-unsigned d5[5][10][2];
-unsigned mul[4][10][2];
+unsigned char d239[239][10][2];
+unsigned char d25[25][10][2];
+unsigned char d5[5][10][2];
+unsigned char mul[4][10][2];
 char a[10240], b[10240], c[10240];
-char string[100];
-char SUBS_YZ[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-const char * _SUBS_YZ = SUBS_YZ+9;
+char SUBS_YZ[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
 void calculate (void);
 void progress (void);
 void epilog (void);
 void set_datasets(void);
 
-#define DIV_UNROLL 6  /*Best unroll value: 6*/
-#define LDIV_UNROLL 4 /*Best unroll value: 4*/
+#define DIV_UNROLL 8 /*Best unroll value: 6*/
+#define LDIV_UNROLL 8 /*Best unroll value: 4*/
 #define CHAR_BIT 8
 #define _R 0
 #define _Q 1
@@ -36,11 +33,13 @@ void set_datasets(void);
   x++;						\
 
 #define DIVIDE(matrix_addr,map,steps,rest)				\
-  {  int k; unsigned q, r, u, * addr; char *_x;		\
+  {  int k; unsigned char q, r, u, * addr; char *_x;			\
   _x = matrix_addr;							\
   r = 0;								\
   for (k = 0; k <steps; k++)						\
     {									\
+      DIV_UN(addr,map,r,_x,_Q);						\
+      DIV_UN(addr,map,r,_x,_Q);						\
       DIV_UN(addr,map,r,_x,_Q);						\
       DIV_UN(addr,map,r,_x,_Q);						\
       DIV_UN(addr,map,r,_x,_Q);						\
@@ -53,26 +52,49 @@ void set_datasets(void);
       DIV_UN(addr,map,r,_x,_Q);						\
     }}
 
-#define LONGDIV(xaddr,n)				\
-  { int k, steps, rest; unsigned q, r, u; char *x;	\
+#define LONGDIV(xaddr,n,lsteps,lrest)			\
+  { int k; unsigned q, r, u; char *x;			\
     x = xaddr;						\
-    steps = (N4+1) / LDIV_UNROLL;			\
-    rest = (N4+1) - steps * LDIV_UNROLL;		\
     r = 0;						\
-    for (k = 0; k < steps; k++)				\
+    for (k = 0; k < lsteps; k++)			\
       {							\
 	LDIV_UN(r,u,q,n,x);				\
 	LDIV_UN(r,u,q,n,x);				\
 	LDIV_UN(r,u,q,n,x);				\
+	LDIV_UN(r,u,q,n,x);				\
+	LDIV_UN(r,u,q,n,x);				\
+	LDIV_UN(r,u,q,n,x);				\
+	LDIV_UN(r,u,q,n,x);				\
 	LDIV_UN(r,u,q,n,x); }				\
-    for (k = 0; k < rest; k++, x++) LDIV_UN(r,u,q,n,x);	\
+    for (k = 0; k < lrest; k++, x++) LDIV_UN(r,u,q,n,x);	\
   }							
+//AQUI HI HA UN ERROR, l'X++ de LONGDIV pel segon bucle, no hi ha de ser!
+#define DIVIDEF(m1_addr,matrix_addr)		\
+{ int k;					\
+  unsigned q, r, r0,r1, u;			\
+  unsigned char *addr;				\
+  char *x,*y;					\
+  x = matrix_addr;				\
+  y = m1_addr;					\
+  r = 0, r0 = 0,r1 = 0;				\
+  for (k = 0; k <= N4; k++, x++,y++)		\
+    {						\
+      addr = d25[r1][*y];			\
+      *y = *(addr + _Q);			\
+      r1 = *addr;				\
+      addr = d239[r][*x];			\
+      *x = *(addr + _Q);			\
+      r = *addr;				\
+      addr = d239[r0][*x];			\
+      *x = *(addr + _Q);			\
+      r0 = *addr;				\
+    }}
 
 void
 MULTIPLY (char *x)
 {
   int j, k, n;
-  unsigned q, r, u;
+  unsigned char q, r, u;
   r = 0;
   x += N4;
   /*
@@ -94,47 +116,45 @@ SET (char *x, int n)
   *x = n;
 }
 
-inline void
+/* void */
+/* SUBTRACTF (char *x, char *y, char *z) */
+#define SUBTRACTF(_x,_y,_z)			\
+  {						\
+  int j, k;					\
+  unsigned q, r, u;				\
+  char v,*x,*y,*z;				\
+  x = _x + N4;					\
+  y = _y + N4;					\
+  z = _z + N4;					\
+  for (k = N4; k >= 0; k--, x--, y--, z--)	\
+    {						\
+  v = *y - *z;					\
+  *z = SUBS_YZ[v+10];				\
+  *(z - 1) = *(z - 1) + (v < 0);		\
+  v = *y - *x;					\
+  *x = SUBS_YZ[v+10];				\
+  *(x - 1) = *(x - 1) + (v < 0);		\
+    }}
+
+void
 SUBTRACT (char *x, char *y, char *z)
 {
   int j, k;
+  unsigned q, r, u;
   char v;
   x += N4;
   y += N4;
   z += N4;
 
-  /*Original Version*/
-  /* for (k = N4; k >= 0; k--, x--, y--, z--) */
-  /*   { */
-  /*     v = *y - *z; */
-  /*     if (v < 0)		//HEAVY */
-  /* 	{ */
-  /* 	  *x = v + 10; */
-  /* 	  *(z - 1) = *(z - 1) + 1; */
-  /* 	} */
-  /*     else */
-  /* 	*x = v; */
-  /*   } */
-
   for (k = N4; k >= 0; k--, x--, y--, z--)
     {
-
       v = *y - *z;     
-      *x = *(_SUBS_YZ+v);
+      *x = SUBS_YZ[v+10];
       *(z - 1) = *(z - 1) + (v < 0);
-
-      /* /\*Alternatives*\/ */
-      /* *x = v + (v>>(sizeof(char)*CHAR_BIT -1) & 0xA); */
-      /* *x = v + ((v<0) * 10); //Slowest */
-      
-      /* /\*Hints*\/ */
-      /* printf("Max entre %i i %i = %i\n",*y,*z,*x^((*x ^ *y) & -(*x < *y))); */
-      /* printf("Abs de %i = %i\n",v, (v+(v >> sizeof(char) * 8 - 1))^(v >> sizeof(char) * 8 - 1)); */      
     }
 }
 
-
-inline void
+void
 SUBTRACT_MUL (char *x, char *z)
 {
   int j, k;
@@ -151,13 +171,14 @@ SUBTRACT_MUL (char *x, char *z)
       *x = q;
 
       v = *x - *z;     
-      *x = *(_SUBS_YZ+v);
+      *x = SUBS_YZ[v+10];
       *(z - 1) = *(z - 1) + (v < 0);
       
       q = mul[r][*x][_Q];
       r = mul[r][*x][_R];
       *x = q;
     }
+
 }
 
 int
@@ -171,29 +192,53 @@ main (int argc, char *argv[])
   return 0;
 }
 
+#define LDIVF_UN(r,u,q,n,x)			\
+  u = r * 10;					\
+  q = u / n;					\
+  r = u - q * n;				\
+  *x = q;					\
+  x++;						\
+
+void LONGDIVF( char *x, int n, int lsteps,int lrest)
+{                                                
+    int j, k;
+    unsigned q, r, u, v;
+    x[0] = 0;
+    u = 0;
+    r = 1;                       
+    q = 1;    
+    /* lsteps = 1250; */
+    /* lrest = 5; */
+    x++;
+    for( k = 1; k<=N4; k++)               
+      { 	
+	LDIVF_UN(r,u,q,n,x);
+	/* LDIVF_UN(r,u,q,n,&x[k+1]); */
+	/* LDIVF_UN(r,u,q,n,&x[k+2]); */
+	/* LDIVF_UN(r,u,q,n,&x[k+3]); */
+      }    
+}
 void
 calculate (void)
 {
-  int j;
+  int j, steps, rest,lsteps,lrest;
 
   N4 = N + 4;
 
-  int steps = (N+5) / DIV_UNROLL;
-  int rest = (N+5) - steps * DIV_UNROLL;  
+  steps = (N+5) / DIV_UNROLL;
+  rest = (N+5) - steps * DIV_UNROLL;
+  lsteps = (N+5) / LDIV_UNROLL;			
+  lrest = (N+5) - lsteps * LDIV_UNROLL;		
 
   SET (a, 0);
   SET (b, 0);
   for (j = 2 * N4 + 1; j >= 3; j -= 2)
     {
-      SET (c, 1);
-      LONGDIV (c, j);
-
-      SUBTRACT (a, c, a);
-      DIVIDE(a,d25,steps,rest);
-
-      SUBTRACT (b, c, b);
-      DIVIDE(b,d239,steps,rest);
-      DIVIDE(b,d239,steps,rest);
+      // SET(c,1);
+      //LONGDIV(c,j);
+      LONGDIVF (c, j,lsteps,lrest);
+      SUBTRACTF(b,c,a);    
+      DIVIDEF(a,b);
     }
 
   for (j=0; j<250; j++)
@@ -206,7 +251,6 @@ calculate (void)
   DIVIDE(a,d5,steps,rest);
   SUBTRACT (b, c, b);
   DIVIDE(b,d239,steps,rest);
-
   /*Loop Fusion, provar-ho al servidor*/
   /*SUBTRACT_MUL(a,b);*/
   MULTIPLY (a);
