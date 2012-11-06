@@ -14,7 +14,6 @@ char * _SUBS = SUBS+10;
 #define _Q 1
 void set_datasets ();
 void calculate (void);
-void progress (void);
 void epilog (void);
 
 void
@@ -113,7 +112,7 @@ SUBTRACT (char *x, char *y, char *z)
   for (k = N4; k >= 0; k--, x--, y--, z--)
     {
       v = *y - *z;
-      *x = *(_SUBS+v);
+      *x = SUBS[v+10];
       *(z - 1) = *(z - 1) + (v < 0);
     }
 }
@@ -134,11 +133,11 @@ SUBTRACTF (char*a,char*c,char*b)
   for (k = N4; k >= 0; k--, a--, b--, c--)
     {
       v = *c - *a;
-      *a = *(_SUBS+v);
+      *a = SUBS[v+10];
       *(a - 1) = *(a - 1) + (v < 0);
 
       v = *c - *b;
-      *b = *(_SUBS+v);
+      *b = SUBS[v+10];
       *(b - 1) = *(b - 1) + (v < 0);
     }
 }
@@ -152,6 +151,26 @@ main (int argc, char *argv[])
   calculate ();
   epilog ();
   return 0;
+}
+
+void
+LONGDIVF (char *x, int n)
+{
+  int k;
+  unsigned q, r, u;
+
+  x[0] = 0;
+  u = 0;
+  r = 1;                       
+  q = 1;    
+  x++;
+  for (k = 1; k <= N4; k++, x++)
+    {
+      u = r * 10;
+      q = u / n;
+      r = u - q * n;
+      *x = q;
+    }
 }
 
 void
@@ -172,11 +191,11 @@ calculate (void)
     
   for (j = 2 * N4 + 1; j >= 3; j -= 2)
     {
-      SET (c, 1);
-      LONGDIV (c, j);
+      LONGDIVF (c, j);
       SUBTRACTF(a,c,b);
       DIVIDEF(b,a);
     }
+
   SET (c, 1);
   SUBTRACT (a, c, a);
   DIVIDE (a,d5);
@@ -185,12 +204,6 @@ calculate (void)
   MULTIPLY (a);
   SUBTRACT (a, a, b);
   MULTIPLY (a);
-}
-
- void
-progress (void)
-{
-  printf (".");
 }
 
 void
