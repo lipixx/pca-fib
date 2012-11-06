@@ -7,8 +7,8 @@ unsigned char d239[239][10][2];
 unsigned char d25[25][10][2];
 unsigned char d5[5][10][2];
 unsigned char mul[4][10][2];
-char SUBS_YZ[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-char * _SUBS_YZ = SUBS_YZ+10;
+char SUBS[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+char * _SUBS = SUBS+10;
 
 #define _R 0
 #define _Q 1
@@ -101,7 +101,7 @@ SET (char *x, int n)
   *x = n;
 }
 
- void
+void
 SUBTRACT (char *x, char *y, char *z)
 {
   int j, k;
@@ -113,8 +113,28 @@ SUBTRACT (char *x, char *y, char *z)
   for (k = N4; k >= 0; k--, x--, y--, z--)
     {
       v = *y - *z;
-      *x = *(_SUBS_YZ+v);
+      *x = *(_SUBS+v);
       *(z - 1) = *(z - 1) + (v < 0);
+    }
+}
+
+void
+SUBTRACTF (char*a,char*c,char*z)
+{
+  /*x=a, y=b, z=c*/
+  /* SUBTRACT (a, c, a); */
+  /* SUBTRACT (b, c, b); */
+
+ int j, k;
+  unsigned q, r, u;
+  char v;
+  a += N4;
+  c += N4;
+  for (k = N4; k >= 0; k--, a--, c--)
+    {
+      v = *c - *a;
+      *a = *(_SUBS+v);
+      *(a - 1) = *(a - 1) + (v < 0);
     }
 }
 
@@ -140,17 +160,17 @@ calculate (void)
   /* SET (c, 1); */
   /* LONGDIV (c, j); */
   /* SUBTRACT (a, c, a); */
-  /* DIVIDE(a,d25,steps,rest); */
+  /* DIVIDE(a,d25); */
   /* SUBTRACT (b, c, b);     */
-  /* DIVIDE(b,d239,steps,rest); */
-  /* DIVIDE(b,d239,steps,rest); */
+  /* DIVIDE(b,d239); */
+  /* DIVIDE(b,d239); */
     
   for (j = 2 * N4 + 1; j >= 3; j -= 2)
     {
       SET (c, 1);
       LONGDIV (c, j);
-      SUBTRACT (a, c, a);
-      SUBTRACT (b, c, b);
+      SUBTRACTF(a,c,a);
+      SUBTRACTF(b,c,b);
       DIVIDEF(b,a);
     }
   SET (c, 1);
