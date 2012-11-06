@@ -17,22 +17,7 @@ void calculate (void);
 void epilog (void);
 
 void
-DIVIDE (char *x, unsigned char map[][10][2])
-{
-  int k;
-  unsigned char q, r, u;
-  unsigned char *addr;
-  r = 0;
-  for (k = 0; k <= N4; k++, x++)
-    {
-      addr = map[r][*x];
-      *x = *(addr + _Q);
-      r = *addr;
-    }
-}
-
-void
-DIVIDEF (char *x, char *y)
+DIVIDEF (char *x, char *y, unsigned char map0[][10][2], unsigned char map1[][10][2])
 {
   /*x=a, y=b*/
   int k;
@@ -43,20 +28,40 @@ DIVIDEF (char *x, char *y)
   r2 = 0;
   for (k = 0; k <= N4; k++, x++, y++)
     {
-      addr = d239[r0][*x];
+      addr = map0[r0][*x];
       *x = *(addr + _Q);
       r0 = *addr;
 
-      addr = d239[r1][*x];
+      addr = map0[r1][*x];
       *x = *(addr + _Q);
       r1 = *addr;
 
-      addr = d25[r2][*y];
+      addr = map1[r2][*y];
       *y = *(addr + _Q);
       r2 = *addr;
     }
 }
 
+void
+DIVIDEF2 (char *x, char *y, unsigned char map0[][10][2], unsigned char map1[][10][2])
+{
+  /*x=a, y=b*/
+  int k;
+  unsigned char q, r0,r1;
+  unsigned char *addr;
+  r0 = 0;
+  r1 = 0;
+  for (k = 0; k <= N4; k++, x++, y++)
+    {
+      addr = map0[r0][*x];
+      *x = *(addr + _Q);
+      r0 = *addr;
+
+      addr = map1[r1][*y];
+      *y = *(addr + _Q);
+      r1 = *addr;
+    }
+}
 
 void
 LONGDIV (char *x, int n)
@@ -75,46 +80,10 @@ LONGDIV (char *x, int n)
 }
 
 void
-MULTIPLY (char *x)
-{
-  int j, k, n;
-  unsigned char q, r, u;
-  r = 0;
-  x += N4;
-  /*
-     r : [0,3]
-     x : [0,9]
-   */
-  for (k = N4; k >= 0; k--, x--)
-    {
-      q = mul[r][*x][_Q];
-      r = mul[r][*x][_R];
-      *x = q;
-    }
-}
-
-void
 SET (char *x, int n)
 {
   memset (x, 0, N4 + 1);
   *x = n;
-}
-
-void
-SUBTRACT (char *x, char *y, char *z)
-{
-  int j, k;
-  unsigned q, r, u;
-  char v;
-  x += N4;
-  y += N4;
-  z += N4;
-  for (k = N4; k >= 0; k--, x--, y--, z--)
-    {
-      v = *y - *z;
-      *x = SUBS[v+10];
-      *(z - 1) = *(z - 1) + (v < 0);
-    }
 }
 
 void
@@ -142,17 +111,6 @@ SUBTRACTF (char*a,char*c,char*b)
     }
 }
 
-int
-main (int argc, char *argv[])
-{
-  N = 10000;
-  setbuf (stdout, NULL);
-  set_datasets ();
-  calculate ();
-  epilog ();
-  return 0;
-}
-
 void
 LONGDIVF (char *x, int n)
 {
@@ -171,6 +129,45 @@ LONGDIVF (char *x, int n)
       r = u - q * n;
       *x = q;
     }
+}
+
+void
+SUBTRACT_MUL (char *x, char *z)
+{
+  int j, k;
+  char v;
+  unsigned char q,r,u,r0;
+  r = 0;
+  r0 = 0;
+  x += N4;
+  z += N4;
+
+  for (k = N4; k >= 0; k--, x--, z--)
+    {
+      q = mul[r0][*x][_Q];
+      r0 = mul[r0][*x][_R];
+      *x = q;
+
+      v = *x - *z;     
+      *x = SUBS[v+10];
+      *(z - 1) = *(z - 1) + (v < 0);
+      
+      q = mul[r][*x][_Q];
+      r = mul[r][*x][_R];
+      *x = q;
+    }
+
+}
+
+int
+main (int argc, char *argv[])
+{
+  N = 10000;
+  setbuf (stdout, NULL);
+  set_datasets ();
+  calculate ();
+  epilog ();
+  return 0;
 }
 
 void
@@ -193,17 +190,21 @@ calculate (void)
     {
       LONGDIVF (c, j);
       SUBTRACTF(a,c,b);
-      DIVIDEF(b,a);
+      DIVIDEF(b,a,d239,d25);
     }
 
+  /* SET (c, 1); */
+  /* SUBTRACT (a, c, a); */
+  /* DIVIDE (a,d5); */
+  /* SUBTRACT (b, c, b); */
+  /* DIVIDE (b,d239); */
+  /* MULTIPLY (a); */
+  /* SUBTRACT (a, a, b); */
+  /* MULTIPLY (a); */
   SET (c, 1);
-  SUBTRACT (a, c, a);
-  DIVIDE (a,d5);
-  SUBTRACT (b, c, b);
-  DIVIDE (b,d239);
-  MULTIPLY (a);
-  SUBTRACT (a, a, b);
-  MULTIPLY (a);
+  SUBTRACTF(a,c,b);
+  DIVIDEF2(a,b,d5,d239);
+  SUBTRACT_MUL(a,b);
 }
 
 void
