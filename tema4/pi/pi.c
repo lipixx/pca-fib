@@ -199,8 +199,48 @@ main (int argc, char *argv[])
   *x = q;					\
   x++;						\
 
+/* void LONGDIVSUBF( char *x, int n, int lsteps,int lrest, char *_y, char *_z) */
+/* { */
+/*   /\*x = c, y = b, z = a *\/ */
+/*     int j, k; */
+/*     unsigned q, r, u, v; */
+/*     char *_x; */
+
+/*     x[0] = 0; */
+/*     _x = x + N4; */
+/*     _y += N4; */
+/*     _z += N4; */
+
+/*     u = 0; */
+/*     r = 1;                        */
+/*     q = 1;     */
+/*     /\* lsteps = 1250; *\/ */
+/*     /\* lrest = 5; *\/ */
+/*     x++; */
+       
+/*     for( k = 1; k<=N4; _x--,_y--,_z--,k++)                */
+/*       { 	 */
+/* 	LDIVF_UN(r,u,q,n,x); */
+/* 	v = *_y - *_z;				 */
+/* 	*_z = SUBS_YZ[v+10];		 */
+/* 	*(_z - 1) = *(_z - 1) + (v < 0); */
+
+/* 	v = *_y - *_x;			 */
+/* 	*_x = SUBS_YZ[v+10];		 */
+/* 	*(_x - 1) = *(_x - 1) + (v < 0);	        */
+/*       } */
+/*     v = *_y - *_z;				 */
+/*     *_z = SUBS_YZ[v+10];		 */
+/*     *(_z - 1) = *(_z - 1) + (v < 0); */
+/*     v = *_y - *_x;			 */
+/*     *_x = SUBS_YZ[v+10];		 */
+/*     *(_x - 1) = *(_x - 1) + (v < 0);	        */
+    
+/* } */
+
 void LONGDIVF( char *x, int n, int lsteps,int lrest)
-{                                                
+{
+  /*char *x = c */
     int j, k;
     unsigned q, r, u, v;
     x[0] = 0;
@@ -238,7 +278,10 @@ calculate (void)
       // SET(c,1);
       //LONGDIV(c,j);
       LONGDIVF (c, j,lsteps,lrest);
-      SUBTRACTF(b,c,a);    
+      SUBTRACTF(b,c,a);
+      
+      //LONGDIVSUBF(c,j,lsteps,lrest,b,a);
+      
       DIVIDEF(a,b);
     }
 
