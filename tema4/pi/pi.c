@@ -15,7 +15,7 @@ void epilog (void);
 void set_datasets(void);
 
 #define DIV_UNROLL 8 /*Best unroll value: 6*/
-#define LDIV_UNROLL 8 /*Best unroll value: 4*/
+#define LDIV_UNROLL 4 /*Best unroll value: 4*/
 #define CHAR_BIT 8
 #define _R 0
 #define _Q 1
@@ -116,30 +116,25 @@ SET (char *x, int n)
   *x = n;
 }
 
-void
-SUBTRACTF (char *x, char *y, char *z)
-{
-  int j, k;
-  unsigned q, r, u;
-  char v;
-  x += N4;
-  y += N4;
-  z += N4;
-
-  for (k = N4; k >= 0; k--, x--, y--, z--)
-    {
-      /*SUBTRACT (a,c,a)*/
-      v = *y - *z;     
-      *z = SUBS_YZ[v+10];
-      *(z - 1) = *(z - 1) + (v < 0);
-
-      /*SUBTRACT (b,c,b)*/
-      v = *y - *x;
-      *x = SUBS_YZ[v+10];
-      *(x - 1) = *(x - 1) + (v < 0);
-
-    }
-}
+/* void */
+/* SUBTRACTF (char *x, char *y, char *z) */
+#define SUBTRACTF(_x,_y,_z)			\
+  {						\
+  int j, k;					\
+  unsigned q, r, u;				\
+  char v,*x,*y,*z;				\
+  x = _x + N4;					\
+  y = _y + N4;					\
+  z = _z + N4;					\
+  for (k = N4; k >= 0; k--, x--, y--, z--)	\
+    {						\
+  v = *y - *z;					\
+  *z = SUBS_YZ[v+10];				\
+  *(z - 1) = *(z - 1) + (v < 0);		\
+  v = *y - *x;					\
+  *x = SUBS_YZ[v+10];				\
+  *(x - 1) = *(x - 1) + (v < 0);		\
+    }}
 
 void
 SUBTRACT (char *x, char *y, char *z)
@@ -202,6 +197,7 @@ main (int argc, char *argv[])
   q = u / n;					\
   r = u - q * n;				\
   *x = q;					\
+  x++;						\
 
 void LONGDIVF( char *x, int n, int lsteps,int lrest)
 {                                                
@@ -213,13 +209,18 @@ void LONGDIVF( char *x, int n, int lsteps,int lrest)
     q = 1;    
     /* lsteps = 1250; */
     /* lrest = 5; */
-    for( k = 1; k<=N4; k++)               
+    x++;
+    for( k = 1; k<lsteps; k++)               
       { 	
-	LDIVF_UN(r,u,q,n,&x[k]);
-	/* LDIVF_UN(r,u,q,n,&x[k+1]); */
-	/* LDIVF_UN(r,u,q,n,&x[k+2]); */
-	/* LDIVF_UN(r,u,q,n,&x[k+3]); */
+	LDIVF_UN(r,u,q,n,x);
+	LDIVF_UN(r,u,q,n,x);
+	LDIVF_UN(r,u,q,n,x);
+	LDIVF_UN(r,u,q,n,x);
       }    
+    for( k = 0; k<lrest; k++)               
+      { 	
+	LDIVF_UN(r,u,q,n,x);
+      }
 }
 void
 calculate (void)
