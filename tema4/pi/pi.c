@@ -33,23 +33,28 @@ DIVIDE (char *x, unsigned char map[][10][2])
 }
 
 void
-DIVIDEF (char *x, unsigned char map[][10][2])
+DIVIDEF (char *x, char *y)
 {
+  /*x=a, y=b*/
   int k;
-  unsigned char q, r0,r1, u;
+  unsigned char q, r0,r1,r2, u;
   unsigned char *addr;
   r0 = 0;
   r1 = 0;
-  for (k = 0; k <= N4; k++, x++)
+  r2 = 0;
+  for (k = 0; k <= N4; k++, x++, y++)
     {
-      addr = map[r0][*x];
+      addr = d239[r0][*x];
       *x = *(addr + _Q);
       r0 = *addr;
 
-      addr = map[r1][*x];
+      addr = d239[r1][*x];
       *x = *(addr + _Q);
       r1 = *addr;
 
+      addr = d25[r2][*y];
+      *y = *(addr + _Q);
+      r2 = *addr;
     }
 }
 
@@ -131,16 +136,22 @@ calculate (void)
   N4 = N + 4;
   SET (a, 0);
   SET (b, 0);
+
+  /* SET (c, 1); */
+  /* LONGDIV (c, j); */
+  /* SUBTRACT (a, c, a); */
+  /* DIVIDE(a,d25,steps,rest); */
+  /* SUBTRACT (b, c, b);     */
+  /* DIVIDE(b,d239,steps,rest); */
+  /* DIVIDE(b,d239,steps,rest); */
+    
   for (j = 2 * N4 + 1; j >= 3; j -= 2)
     {
       SET (c, 1);
       LONGDIV (c, j);
       SUBTRACT (a, c, a);
-      DIVIDE (a,d25);
       SUBTRACT (b, c, b);
-      DIVIDEF(b,d239);
-      /* DIVIDE (b,d239); */
-      /* DIVIDE (b,d239); */
+      DIVIDEF(b,a);
     }
   SET (c, 1);
   SUBTRACT (a, c, a);
