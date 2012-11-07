@@ -117,16 +117,24 @@ LONGDIVF (char *x, int n)
   int k;
   unsigned q, r, u;
 
-  x[0] = 0;
+  //  x[0] = 0;
+  *x++=0;
   r = 1;                       
-  x++;
-  for (k = 1; k <= N4; k++, x++)
+  //  x++;
+
+  for (k = N4;  k;  --k)
     {
-      u = r * 10;
-      q = u / n;
-      r = u - q * n;
-      *x = q;
+      *x++ = (q = ((u = r * 10) / n)); 
+      r = u - (q * n); 
     }
+
+  /* for (k = 1; k <= N4; k++, x++) */
+  /*   { */
+  /*     u = r * 10; */
+  /*     q = u / n; */
+  /*     r = u - q * n; */
+  /*     *x = q; */
+  /*   } */
 }
 
 void
