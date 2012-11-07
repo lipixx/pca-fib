@@ -70,12 +70,11 @@ LONGDIV (char *x, int n)
   unsigned q, r, u;
   
   r = 0;
-  for (k = 0; k <= N4; k++, x++)
+
+  for (k = N4; k; k--)
     {
-      u = r * 10 + *x;
-      q = u / n;
+      *x++ = (q = ((u=r*10+*x)/n));
       r = u - q * n;
-      *x = q;
     }
 }
 
@@ -118,9 +117,9 @@ LONGDIVF (char *x, int n)
   unsigned q, r, u;
 
   //  x[0] = 0;
+  //  x++;
   *x++=0;
   r = 1;                       
-  //  x++;
 
   for (k = N4;  k;  --k)
     {
