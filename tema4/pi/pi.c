@@ -118,9 +118,7 @@ LONGDIVF (char *x, int n)
   unsigned q, r, u;
 
   x[0] = 0;
-  u = 0;
   r = 1;                       
-  q = 1;    
   x++;
   for (k = 1; k <= N4; k++, x++)
     {
