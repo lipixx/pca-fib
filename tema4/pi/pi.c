@@ -3,10 +3,8 @@
 #include <stdlib.h>
 int N, N4;
 char a[10240], b[10240], c[10240];
-unsigned char q_d239[239][10];
-unsigned char r_d239[239][10];
-unsigned char q_d25[25][10];
-unsigned char r_d25[25][10];
+unsigned char d239[239][10][2];
+unsigned char d25[25][10][2];
 unsigned char d5[5][10][2];
 unsigned char mul[4][10][2];
 char SUBS[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
@@ -19,40 +17,86 @@ void calculate (void);
 void epilog (void);
 
 void
-DIVIDEF (char *x, char *y, unsigned char map0[][10], unsigned char map1[][10])
+DIVIDEF_LONGDIV (char *x, char *y, unsigned char map0[][10][2], unsigned char map1[][10][2], char *z, int jj)
+{
+  /*x=a, y=b*/
+  int k;
+  unsigned q3, r3, u3;
+  unsigned char q, r0,r1,r2, u;
+  unsigned char *addr;
+  r0 = 0;
+  r1 = 0;
+  r2 = 0;
+
+  addr = map0[r0][*x];
+  *x = *(addr + _Q);
+  r0 = *addr;
+
+  addr = map0[r1][*x];
+  *x = *(addr + _Q);
+  r1 = *addr;
+
+  addr = map1[r2][*y];
+  *y = *(addr + _Q);
+  r2 = *addr;
+
+  *z++=0;
+  r3 = 1;                       
+
+  for (k = 1; k <= N4; k++, x++, y++, z++)
+    {
+      addr = map0[r0][*x];
+      *x = *(addr + _Q);
+      r0 = *addr;
+
+      addr = map0[r1][*x];
+      *x = *(addr + _Q);
+      r1 = *addr;
+
+      addr = map1[r2][*y];
+      *y = *(addr + _Q);
+      r2 = *addr;
+
+      u3 = r3 * 10; 
+      q3 = u3 / jj; 
+      r3 = u3 % jj; 
+      *z = q3; 
+    }
+}
+
+void
+DIVIDEF (char *x, char *y, unsigned char map0[][10][2], unsigned char map1[][10][2])
 {
   /*x=a, y=b*/
   int k;
   unsigned char q, r0,r1,r2, u;
   unsigned char *addr;
-  char xt,yt,xp;
-
   r0 = 0;
   r1 = 0;
   r2 = 0;
   for (k = 0; k <= N4; k++, x++, y++)
     {
-      xt = *x;
-      xp = q_d239[r0][xt];
-      r0 = r_d239[r0][xt];
+      addr = map0[r0][*x];
+      *x = *(addr + _Q);
+      r0 = *addr;
 
-      *x = q_d239[r1][xp];
-      r1 = r_d239[r1][xp];
+      addr = map0[r1][*x];
+      *x = *(addr + _Q);
+      r1 = *addr;
 
-      yt = *y;
-      *y = q_d25[r2][yt];
-      r2 = r_d25[r2][yt];
+      addr = map1[r2][*y];
+      *y = *(addr + _Q);
+      r2 = *addr;
     }
 }
 
 void
-DIVIDEF2 (char *x, char *y, unsigned char map0[][10][2], unsigned char map1[][10])
+DIVIDEF2 (char *x, char *y, unsigned char map0[][10][2], unsigned char map1[][10][2])
 {
   /*x=a, y=b*/
   int k;
   unsigned char q, r0,r1;
   unsigned char *addr;
-  char yt;
   r0 = 0;
   r1 = 0;
   for (k = 0; k <= N4; k++, x++, y++)
@@ -60,25 +104,10 @@ DIVIDEF2 (char *x, char *y, unsigned char map0[][10][2], unsigned char map1[][10
       addr = map0[r0][*x];
       *x = *(addr + _Q);
       r0 = *addr;
-      
-      yt = *y;
-      *y = q_d239[r1][yt];
-      r1 = r_d239[r1][yt];
-    }
-}
 
-void
-LONGDIV (char *x, int n)
-{
-  int k;
-  unsigned q, r, u;
-  
-  r = 0;
-
-  for (k = N4; k; k--)
-    {
-      *x++ = (q = ((u=r*10+*x)/n));
-      r = u - q * n;
+      addr = map1[r1][*y];
+      *y = *(addr + _Q);
+      r1 = *addr;
     }
 }
 
@@ -96,21 +125,23 @@ SUBTRACTF (char*a,char*c,char*b)
   /* SUBTRACT (a, c, a); */
   /* SUBTRACT (b, c, b); */
 
- int j, k;
+  int j, k;
   unsigned q, r, u;
   char v;
+  char carry1=0, carry2=0;
+
   a += N4;
   c += N4;
   b += N4;
   for (k = N4; k >= 0; k--, a--, b--, c--)
     {
-      v = *c - *a;
+      v = *c - *a - carry1;
       *a = SUBS[v+10];
-      *(a-1) = *(a-1) + (v < 0);
+      carry1 = (v < 0);
 
-      v = *c - *b;
+      v = *c - *b - carry2;
       *b = SUBS[v+10];
-      *(b - 1) = *(b - 1) + (v < 0);
+      carry2 = (v < 0);
     }
 }
 
@@ -120,14 +151,26 @@ LONGDIVF (char *x, int n)
   int k;
   unsigned q, r, u;
 
+  /* x[0] = 0; */
   *x++=0;
   r = 1;                       
+  /* x++; */
 
+#if 0
   for (k = N4;  k;  --k)
     {
       *x++ = (q = ((u = r * 10) / n)); 
       r = u - (q * n); 
     }
+#else
+  for (k = 1; k <= N4; k++, x++) 
+    { 
+      u = r * 10; 
+      q = u / n; 
+      r = u % n; 
+      *x = q; 
+    } 
+#endif
 }
 
 void
@@ -176,17 +219,20 @@ calculate (void)
   N4 = N + 4;
   SET (a, 0);
   SET (b, 0);
-    
-  for (j = 2 * N4 + 1; j >= 3; j -= 2)
+   
+  LONGDIVF (c, 2*N4 + 1);
+
+  for (j = 2 * N4+1; j >= 5; j -= 2)
     {
-      LONGDIVF (c, j);
       SUBTRACTF(a,c,b);
-      DIVIDEF(b,a,q_d239,q_d25);
+      DIVIDEF_LONGDIV(b,a,d239,d25,c,j-2);
     }
 
+  SUBTRACTF(a,c,b);
+  DIVIDEF(b,a,d239,d25);
   SET (c, 1);
   SUBTRACTF(a,c,b);
-  DIVIDEF2(a,b,d5,q_d239);
+  DIVIDEF2(a,b,d5,d239);
   SUBTRACT_MUL(a,b);
 }
 
@@ -200,21 +246,21 @@ epilog (void)
     }
   printf("..... \n3.");
   
-    for (n = 0, j = 1, k = 1; j <= N; j+=5, k++)
-      {
-	fprintf (stdout, "%d%d%d%d%d", a[j],a[j+1],a[j+2],a[j+3],a[j+4]);
-	if (k == 10)
-	  {
-	    k = 0;
-	    n += 50;
-	    if (n % 250 == 0)
-	      fprintf (stdout, "    <%d>\n\n   ", n);
-	    else
-	      fprintf (stdout, "\n   ");
-	  }
-	else
-	  fprintf (stdout, " ");
-      }
+  for (n = 0, j = 1, k = 1; j <= N; j+=5, k++)
+    {
+      fprintf (stdout, "%d%d%d%d%d", a[j],a[j+1],a[j+2],a[j+3],a[j+4]);
+      if (k == 10)
+	{
+	  k = 0;
+	  n += 50;
+	  if (n % 250 == 0)
+	    fprintf (stdout, "    <%d>\n\n   ", n);
+	  else
+	    fprintf (stdout, "\n   ");
+	}
+      else
+	fprintf (stdout, " ");
+    }
 }
 
 void
@@ -230,20 +276,21 @@ set_datasets ()
 	  unsigned _r = _q * 0.1;
 	  mul[r][x][_R] = _r;
 	  mul[r][x][_Q] = _q - _r * 10;
-	  
+	    
 	}
     }
-	 
-  /*d239[x][r][_Q]*/
-   for (r = 0; r < 239; r++)
+   
+
+  /* d239[r][x][_R o _Q] */
+  for (r = 0; r < 239; r++)
     {
       r_10 = r * 10;
       for (x = 0; x < 10; x++)
-	{       
+	{
 	  u = r_10 + x;
 	  q = u / 239;
-	  r_d239[r][x] = u - q * 239;
-	  q_d239[r][x] = q;
+	  d239[r][x][_R] = u - q * 239;
+	  d239[r][x][_Q] = q;
 	}
     }
 
@@ -251,12 +298,13 @@ set_datasets ()
   for (r = 0; r < 25; r++)
     {
       r_10 = r * 10;
+
       for (x = 0; x < 10; x++)
-	{       
+	{
 	  u = r_10 + x;
 	  q = u * 0.04;
-	  r_d25[r][x] = u - q * 25;
-	  q_d25[r][x] = q;
+	  d25[r][x][_R] = u - q * 25;
+	  d25[r][x][_Q] = q;
 	}
     }
 
@@ -273,5 +321,4 @@ set_datasets ()
 	  d5[r][x][_Q] = q;
 	}
     }
-
 }
