@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "structures.h"
-
+#include <time.h>
 
 void print_electric_grid ( fftw_real *grid, int grid_size)
 {
@@ -41,6 +41,9 @@ void print_electric_grid ( fftw_real *grid, int grid_size)
 }
 
 int main( int argc , char *argv[] ) {
+
+  /* PCA variables*/
+  clock_t start, finish;
 
   /* index counters */
 
@@ -355,7 +358,7 @@ int main( int argc , char *argv[] ) {
 
   }
   printf( "PCA TIMING SHOULD start here\n");
-
+  start = clock();
 /************/
 
   /* Do these things first so that bad inputs will be caught soonest */
@@ -551,7 +554,8 @@ int main( int argc , char *argv[] ) {
   max_es_value = 0 ;
 
   printf( "Starting main loop through the rotations\n" ) ;
-  printf( "PCA TIMING SHOULD stop here\n");
+  finish = clock();
+  printf( "PCA TIMING SHOULD stop here - Elapsed Time: %f sec.\n", (finish - start)/(float)1000000);
 
   /* PCA: start comment
      for( rotation = first_rotation ; rotation <= Angles.n ; rotation ++ ) {
