@@ -1,0 +1,4 @@
+./ftdock -static 2pka.parsed -mobile 5pti.parsed > my2.out
+-static 1hba.parsed -mobile 5pti.parsed > my1.out
+-static 4hhb.parsed -mobile 5pti.parsed > my4.out
+
