@@ -556,7 +556,7 @@ int main( int argc , char *argv[] ) {
   printf( "Starting main loop through the rotations\n" ) ;
   finish = clock();
   printf( "PCA TIMING SHOULD stop here - Elapsed Time: %f sec.\n", (finish - start)/(float)1000000);
-
+  fprintf(stderr,"Elapsed Time: %f sec.\n", (finish - start)/(float)1000000);
   /* PCA: start comment
      for( rotation = first_rotation ; rotation <= Angles.n ; rotation ++ ) {
    * PCA: end comment 

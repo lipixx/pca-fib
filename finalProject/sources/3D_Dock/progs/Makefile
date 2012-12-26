@@ -24,7 +24,7 @@ SHELL           = /bin/sh
 
 CC              = gcc
 
-CC_FLAGS        = -O3 -march=core2 -pg -g -static 
+CC_FLAGS        = $(FLAGS) -O3 -march=core2 -static 
 STRIP           = strip
 
 CC_LINKERS      = -lm
@@ -53,6 +53,11 @@ PROGRAMS = ftdock build randomspin
 
 all:		$(PROGRAMS)
 
+g:		
+		make FLAGS='-g'
+
+pg:		
+		make FLAGS='-g -pg'
 #############
 
 ftdock:		ftdock.o $(LIBRARY_OBJECTS) structures.h

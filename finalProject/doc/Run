@@ -2,3 +2,12 @@
 -static 1hba.parsed -mobile 5pti.parsed > my1.out
 -static 4hhb.parsed -mobile 5pti.parsed > my4.out
 
+
+Pythagoras Theorem - see 3.1.1
+http://math.hws.edu/graphicsnotes/c3/s1.html
+
+http://stackoverflow.com/questions/2637700/is-it-possible-to-roll-a-significantly-faster-version-of-sqrt
+An example of this might be: if you want to find the nearest thing to you, you can compare the distances squared instead of taking the sqrt of each, since distance*distance > distance. Or you might be able to run a pre-process step which calculates the distance pairs of everything in advance. (Obviously I'm imagining some sort of 2-D or 3-D data structure). – stusmith Apr 14 '10 at 13:40
+
+
+http://www.codemaestro.com/reviews/9
