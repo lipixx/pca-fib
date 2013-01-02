@@ -136,12 +136,18 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
 
             if( This_Structure.Residue[residue].Atom[atom].charge != 0 ) {
 
-	/*  distance =  sqrt(  */
- /* 		  ((This_Structure.Residue[residue].Atom[atom].coord[1]-x_centre) * (This_Structure.Residue[residue].Atom[atom].coord[1]-x_centre))  */
- /* 		+ ((This_Structure.Residue[residue].Atom[atom].coord[2]-y_centre) * (This_Structure.Residue[residue].Atom[atom].coord[2]-y_centre))  */
- /* 		+ ((This_Structure.Residue[residue].Atom[atom].coord[3]-z_centre) * (This_Structure.Residue[residue].Atom[atom].coord[3]-z_centre)) */
- /* ) ; */
-              distance = pythagoras( This_Structure.Residue[residue].Atom[atom].coord[1] , This_Structure.Residue[residue].Atom[atom].coord[2] , This_Structure.Residue[residue].Atom[atom].coord[3] , x_centre , y_centre , z_centre ) ;
+	      float a,b,c;
+	      a = This_Structure.Residue[residue].Atom[atom].coord[1]-x_centre;
+	      b = This_Structure.Residue[residue].Atom[atom].coord[2]-y_centre;
+	      c = This_Structure.Residue[residue].Atom[atom].coord[3]-z_centre;
+	      
+	      distance = sqrt(a*a+b*b+c*c);
+	      /* distance =  sqrt(
+ 		  ((This_Structure.Residue[residue].Atom[atom].coord[1]-x_centre) * (This_Structure.Residue[residue].Atom[atom].coord[1]-x_centre))
+ 		+ ((This_Structure.Residue[residue].Atom[atom].coord[2]-y_centre) * (This_Structure.Residue[residue].Atom[atom].coord[2]-y_centre))
+ 		+ ((This_Structure.Residue[residue].Atom[atom].coord[3]-z_centre) * (This_Structure.Residue[residue].Atom[atom].coord[3]-z_centre))
+		) ;*/
+	      //   distance = pythagoras( This_Structure.Residue[residue].Atom[atom].coord[1] , This_Structure.Residue[residue].Atom[atom].coord[2] , This_Structure.Residue[residue].Atom[atom].coord[3] , x_centre , y_centre , z_centre ) ;
          
               if( distance < 2.0 ) distance = 2.0 ;
 
