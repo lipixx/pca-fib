@@ -1,0 +1,249 @@
+ 
+Previous work
+##############
+
+opcontrol -l:
+
+BR_INST_EXEC: (counter: all)
+        Branch instructions executed (not necessarily retired) (min count: 3000)
+BR_MISSP_EXEC: (counter: all)
+        Branch instructions executed that were mispredicted at execution (min count: 3000)
+BR_BAC_MISSP_EXEC: (counter: all)
+        Branch instructions executed that were mispredicted at Front End (BAC) (min count: 3000)
+BR_CND_EXEC: (counter: all)
+        Conditional Branch instructions executed (min count: 3000)
+BR_CND_MISSP_EXEC: (counter: all)
+        Conditional Branch instructions executed that were mispredicted (min count: 3000)
+BR_IND_EXEC: (counter: all)
+        Indirect Branch instructions executed (min count: 3000)
+BR_IND_MISSP_EXEC: (counter: all)
+        Indirect Branch instructions executed that were mispredicted (min count: 3000)
+BR_RET_EXEC: (counter: all)
+        Return Branch instructions executed (min count: 3000)
+BR_RET_MISSP_EXEC: (counter: all)
+        Return Branch instructions executed that were mispredicted at Execution (min count: 3000)
+BR_RET_BAC_MISSP_EXEC: (counter: all)
+        Branch instructions executed that were mispredicted at Front End (BAC) (min count: 3000)
+BR_CALL_EXEC: (counter: all)
+        CALL instruction executed (min count: 3000)
+BR_CALL_MISSP_EXEC: (counter: all)
+        CALL instruction executed and miss predicted (min count: 3000)
+BR_IND_CALL_EXEC: (counter: all)
+        Indirect CALL instruction executed (min count: 3000)
+BR_TKN_BUBBLE_1: (counter: all)
+        Branch predicted taken with bubble 1 (min count: 3000)
+BR_TKN_BUBBLE_2: (counter: all)
+        Branch predicted taken with bubble 2 (min count: 3000)
+
+BR_INST_RETIRED: (counter: all)
+        number of branch instructions retired (min count: 500)
+        Unit masks (default 0xa)
+        ----------
+        0x01: predicted not-taken
+        0x02: mispredicted not-taken
+        0x04: predicted taken
+        0x08: mispredicted taken
+BR_MISS_PRED_RETIRED: (counter: all)
+        number of mispredicted branches retired (precise) (min count: 500)
+
+Other related stuff:
+
+
+IFU_MEM_STALL: (counter: all)
+        cycles instruction fetch pipe is stalled (min count: 500)
+ILD_STALL: (counter: all)
+        cycles instruction length decoder is stalled (min count: 500)
+
+
+INST_RETIRED: (counter: all)
+        number of instructions retired (min count: 6000)
+        Unit masks (default 0x0)
+        ----------
+        0x00: Any
+        0x01: Loads
+        0x02: Stores
+        0x04: Other
+X87_OPS_RETIRED: (counter: all)
+        number of computational FP operations retired (min count: 500)
+        Unit masks (default 0xfe)
+        ----------
+        0x01: FXCH instructions retired
+        0xfe: Retired floating-point computational operations (precise)
+UOPS_RETIRED: (counter: all)
+        number of UOPs retired (min count: 6000)
+        Unit masks (default 0xf)
+        ----------
+        0x01: Fused load+op or load+indirect branch retired
+        0x02: Fused store address + data retired
+        0x04: Retired instruction pairs fused into one micro-op
+        0x07: Fused micro-ops retired
+        0x08: Non-fused micro-ops retired
+        0x0f: Micro-ops retired
+
+MACHINE_NUKES_SMC: (counter: all)
+        number of pipeline flushing events (min count: 500)
+        Unit masks (default 0x5)
+        ----------
+        0x01: Self-Modifying Code detected
+        0x04: Execution pipeline restart due to memory ordering conflict or memory disambiguation 
+              misprediction
+
+
+1.................................................
+
+a) Per veure quines rutines executen més BR:
+
+BR_INST_EXEC: (counter: all)
+        Branch instructions executed (not necessarily retired) (min count: 3000)
+
+b) Per veure quines rutines executen més BR miss:
+
+BR_MISSP_EXEC: (counter: all)
+        Branch instructions executed that were mispredicted at execution (min count: 3000)
+
+
+2.................................................
+a) PIN instrumenta el codi i l'analitza en temps d'execució. No mira quins són els salts reals ni les prediccions que fa el processador, sinó la lògica del programa,
+per tant per ser exactes necessitem Oprofile.
+
+b) Pel motiu anterior, com que PIN no analitza els events del processador no serveix pel que volem analitzar. OProfile és un mòdul carregat al kernel que enregistra
+directament els events de hardware.
+
+
+
+
+
+################ INLINING ####################
+
+1. 
+a) pi.3ni -> 4.75user 0.00system 0:04.76elapsed 99%CPU (0avgtext+0avgdata 1584maxresident)k
+b) pi.3 -> 3.17user 0.00system 0:03.18elapsed 99%CPU (0avgtext+0avgdata 1584maxresident)k
+c) Executant valgdrind amb la opció "--tool=callgrind", obtenim les crides que es fan a cada programa.
+En el pi.3ni veiem les més rellevants:
+
+main
+calculate
+DIVIDE
+SUBTRACT
+LONGDIV
+SET
+MULTIPLY
+
+En el pi.3 veiem només
+main
+calculate
+
+d) Si, ha fet altres optimitzacions, per exemple veiem que de instruccions MUL ha passat de 300320339 a 30169.
+També hem vist com de 1004772053 SUB, ha passat a 804541986. XOR passa de 370313289 a 70023211. DIV de 370116696 a
+69826626.
+
+Al final la pista principal de que ha passat es troba en les instruccions de SHR, que abans eren 51578 i ara 
+300341651!!! Ha canviat multiplicacions i divisions per desplaçaments!.
+
+e) Com era d'esperar, el resultat ha millorat, tot i que no tant com fent inlining de les altres funcions també.
+
+pi.3 -> 3.16user 0.01system 0:03.18elapsed 99%CPU (0avgtext+0avgdata 1600maxresident)k
+pi.3ni -> 3.26user 0.00system 0:03.27elapsed 99%CPU (0avgtext+0avgdata 1584maxresident)k
+
+################# CODE HOISTING ################
+2. Minuscules
+
+Veure image "minuscules.SenseOptimitzar.jpg
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls   s/call   s/call  name    
+100.87      7.75     7.75    50001     0.00     0.00  strlen
+  0.00      7.75     0.00        1     0.00     0.00  generateSentence
+  0.00      7.75     0.00        1     0.00     7.75  lowercase
+
+CPU: Core 2, speed 2126.44 MHz (estimated)
+Counted CPU_CLK_UNHALTED events (Clock cycles when not halted) with a unit mask of 0x00 (Unhalted core cycles) count 750000
+samples  %        image name               app name                 symbol name
+22513    89.6646  /home/lipi/Desktop/PCA/Lesson4/tema4/minuscules/minuscules /home/lipi/Desktop/PCA/Lesson4/tema4/minuscules/minuscules strlen
+
+Optimizing strlen and others like A-a, \0+1 that appears on loops, we obtain:
+index % time    self  children    called     name
+                0.00    0.00       1/1           main [8]
+[1]      0.0    0.00    0.00       1         generateSentence [1]
+-----------------------------------------------
+                0.00    0.00       1/1           main [8]
+[2]      0.0    0.00    0.00       1         lowercase [2]
+                0.00    0.00       1/1           strlen [3]
+-----------------------------------------------
+                0.00    0.00       1/1           lowercase [2]
+[3]      0.0    0.00    0.00       1         strlen [3]
+
+veure també gràfica "minuscules.Optimized.jpg"
+
+################# Branch removal ################
+9.
+b)
+lipi@gall:~/Desktop/PCA/Lesson4/tema4/abs$ /usr/bin/time ./abs
+2.83user 0.29system 0:03.12elapsed 100%CPU (0avgtext+0avgdata 1563984maxresident)k
+0inputs+0outputs (0major+97786minor)pagefaults 0swaps
+
+lipi@gall:~/Desktop/PCA/Lesson4/tema4/abs$ /usr/bin/time ./abs.3
+1.58user 0.25system 0:01.84elapsed 99%CPU (0avgtext+0avgdata 1563968maxresident)k
+0inputs+0outputs (0major+97784minor)pagefaults 0swaps
+c)
+
+A la versió optimitzada no surt cap instrucció de BR del programa.
+
+A la versió no optimitzada surten un 93% de instruccions mal predides:
+
+BR_MISS_PRED_R...|BR_INST_RETIRE...|
+  samples|      %|  samples|      %|
+------------------------------------
+    16752 93.3259     16754 93.2384 /home/lipi/Desktop/PCA/Lesson4/tema4/abs/abs
+
+
+
+d) 
+NO-Optimized version:
+----------------------
+000000000040053c <meu_abs>:
+  40053c:	55                   	push   rbp
+  40053d:	48 89 e5             	mov    rbp,rsp
+  400540:	89 7d fc             	mov    DWORD PTR [rbp-0x4],edi   // x = edi (paràmetre per valor)
+  400543:	83 7d fc 00          	cmp    DWORD PTR [rbp-0x4],0x0   // x < 0
+  400547:	79 03                	jns    40054c <meu_abs+0x10>     // jump near if signed
+  400549:	f7 5d fc             	neg    DWORD PTR [rbp-0x4]       // x = -x
+  40054c:	8b 45 fc             	mov    eax,DWORD PTR [rbp-0x4]   // paràmetre per retorn
+  40054f:	c9                   	leave  
+  400550:	c3                   	ret    
+
+Optimized version:
+-------------------
+0000000000400540 <meu_abs>:
+  400540:	89 fa                	mov    edx,edi    //edx = x (paràmetre per valor)
+  400542:	c1 fa 1f             	sar    edx,0x1f   //signed division by shift
+  400545:	89 d0                	mov    eax,edx    
+  400547:	31 f8                	xor    eax,edi
+  400549:	29 d0                	sub    eax,edx
+  40054b:	c3                   	ret    
+  40054c:	0f 1f 40 00          	nop    DWORD PTR [rax+0x0]
+
+g) El codi compilat no ha canviat, no obstant això, sí que hi ha diferència:
+
+Veiem com el nombre de instruccions mal predides i retirades és molt inferior a abans:
+
+BR_MISS_PRED_R...|BR_INST_RETIRE...|
+  samples|      %|  samples|      %|
+------------------------------------
+74        5.3857  0              0  76        5.4519  abs                      abs                      meu_abs
+
+
+2.30user 0.28system 0:02.59elapsed 99%CPU (0avgtext+0avgdata 1563984maxresident)k
+0inputs+0outputs (0major+97785minor)pagefaults 0swaps
+
+1.47user 0.33system 0:01.81elapsed 100%CPU (0avgtext+0avgdata 1563984maxresident)k
+0inputs+0outputs (0major+97786minor)pagefaults 0swaps
+
+10. 
+a) De la condició, podem veure com clarament s[i]<='Z' tendirà a ser cert, ja que la taula ascii té 127 caràcters i Z correspon al 90, per tant té un 90/127 = 70% de possibilitats de ser cert. En l'altre cas, 'A' val 65 i per tant que el valor sigui més gran que A correspon a 127-65 = 62 / 127 = 49%.
+
+La primera condició per tant serà més vegades falsa que certa.
+
+
+
