@@ -85,7 +85,7 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
 
   /* Counters */
 
-  int	residue , atom ;
+  int	residue , atom , d_tmp ;
 
   /* Co-ordinates */
 
@@ -115,77 +115,49 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
 
   printf( "  electric field calculations ( one dot / grid sheet ) " ) ;
 
-  for( x = 0 ; x < grid_size ; x ++ ) {
+  for( x = 0 ; x < grid_size ; x ++ )
+    {
+      printf( "." ) ;
+      x_centre  = gcentre( x , grid_span , grid_size ) ;
+      
+      for( y = 0 ; y < grid_size ; y ++ ) 
+	{
+	  y_centre  = gcentre( y , grid_span , grid_size ) ;
+	  for( z = 0 ; z < grid_size ; z ++ ) 
+	    {
+	      z_centre  = gcentre( z , grid_span , grid_size ) ;
+	      phi = 0 ;
 
-    printf( "." ) ;
-
-    x_centre  = gcentre( x , grid_span , grid_size ) ;
-
-    for( y = 0 ; y < grid_size ; y ++ ) {
-
-      y_centre  = gcentre( y , grid_span , grid_size ) ;
-
-      for( z = 0 ; z < grid_size ; z ++ ) {
-
-        z_centre  = gcentre( z , grid_span , grid_size ) ;
-
-        phi = 0 ;
-
-        for( residue = 1 ; residue <= This_Structure.length ; residue ++ ) {
-          for( atom = 1 ; atom <= This_Structure.Residue[residue].size ; atom ++ ) {
-
-            if( This_Structure.Residue[residue].Atom[atom].charge != 0 ) {
-
-	      float a,b,c;
-	      a = This_Structure.Residue[residue].Atom[atom].coord[1]-x_centre;
-	      b = This_Structure.Residue[residue].Atom[atom].coord[2]-y_centre;
-	      c = This_Structure.Residue[residue].Atom[atom].coord[3]-z_centre;
-	      
-	      distance = sqrt(a*a+b*b+c*c);
-	      /* distance =  sqrt(
- 		  ((This_Structure.Residue[residue].Atom[atom].coord[1]-x_centre) * (This_Structure.Residue[residue].Atom[atom].coord[1]-x_centre))
- 		+ ((This_Structure.Residue[residue].Atom[atom].coord[2]-y_centre) * (This_Structure.Residue[residue].Atom[atom].coord[2]-y_centre))
- 		+ ((This_Structure.Residue[residue].Atom[atom].coord[3]-z_centre) * (This_Structure.Residue[residue].Atom[atom].coord[3]-z_centre))
-		) ;*/
-	      //   distance = pythagoras( This_Structure.Residue[residue].Atom[atom].coord[1] , This_Structure.Residue[residue].Atom[atom].coord[2] , This_Structure.Residue[residue].Atom[atom].coord[3] , x_centre , y_centre , z_centre ) ;
-         
-              if( distance < 2.0 ) distance = 2.0 ;
-
-              if( distance >= 2.0 ) {
-
-                if( distance >= 8.0 ) {
-
-                  epsilon = 80 ;
-
-                } else { 
-
-                  if( distance <= 6.0 ) { 
-
-                    epsilon = 4 ;
-             
-                  } else {
-
-                    epsilon = ( 38 * distance ) - 224 ;
-
-                  }
-
-                }
-  
-                phi += ( This_Structure.Residue[residue].Atom[atom].charge / ( epsilon * distance ) ) ;
-
-              }
-
-            }
-
-          }
-        }
-
-        grid[gaddress(x,y,z,grid_size)] = (fftw_real)phi ;
-
-      }
-    }
+	      for( residue = 1 ; residue <= This_Structure.length ; residue++ ) 
+		{
+		  for( atom = 1 ; atom <= This_Structure.Residue[residue].size ; atom++ ) 
+		    {
+		      if( This_Structure.Residue[residue].Atom[atom].charge != 0 )
+			{
+			  distance =  sqrtf(
+					    ((This_Structure.Residue[residue].Atom[atom].coord[1]-x_centre) * (This_Structure.Residue[residue].Atom[atom].coord[1]-x_centre))
+					    + ((This_Structure.Residue[residue].Atom[atom].coord[2]-y_centre) * (This_Structure.Residue[residue].Atom[atom].coord[2]-y_centre))
+					    + ((This_Structure.Residue[residue].Atom[atom].coord[3]-z_centre) * (This_Structure.Residue[residue].Atom[atom].coord[3]-z_centre))
+					    ) ;
+			  d_tmp = (distance < 2.0) * 2.0;
+			  
+			  if (!d_tmp)
+			    {
+			      epsilon = 80 * (distance >= 8.0);
+			      epsilon += 4 * (distance <= 6.0);
+			      epsilon += (!(distance >= 8.0) && !(distance<=6.0)) * ((38 * distance) - 224);
+			      phi += ( This_Structure.Residue[residue].Atom[atom].charge / ( epsilon * distance ) ) ;
+			    }
+			  else
+			    distance = d_tmp;
+			}
+		    }
+		}
+	      grid[gaddress(x,y,z,grid_size)] = (fftw_real)phi ;
+	    }
+	}
   }
-
+  
   printf( "\n" ) ;
 
 /************/
