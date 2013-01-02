@@ -85,7 +85,7 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
 
   /* Counters */
 
-  int	residue , atom , d_tmp ;
+  int	residue , atom;
 
   /* Co-ordinates */
 
@@ -139,17 +139,18 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
 					    + ((This_Structure.Residue[residue].Atom[atom].coord[2]-y_centre) * (This_Structure.Residue[residue].Atom[atom].coord[2]-y_centre))
 					    + ((This_Structure.Residue[residue].Atom[atom].coord[3]-z_centre) * (This_Structure.Residue[residue].Atom[atom].coord[3]-z_centre))
 					    ) ;
-			  d_tmp = (distance < 2.0) * 2.0;
-			  
-			  if (!d_tmp)
-			    {
-			      epsilon = 80 * (distance >= 8.0);
-			      epsilon += 4 * (distance <= 6.0);
-			      epsilon += (!(distance >= 8.0) && !(distance<=6.0)) * ((38 * distance) - 224);
-			      phi += ( This_Structure.Residue[residue].Atom[atom].charge / ( epsilon * distance ) ) ;
-			    }
+
+			  if (distance < 2.0) distance = 2.0;
+
+			  if (distance >= 8.0)
+			    epsilon = 80;
 			  else
-			    distance = d_tmp;
+			    if (distance <= 6.0)
+			      epsilon = 4;
+			    else
+			      epsilon = (38 * distance) - 224;
+
+			  phi += ( This_Structure.Residue[residue].Atom[atom].charge / ( epsilon * distance ) ) ; 			 
 			}
 		    }
 		}
