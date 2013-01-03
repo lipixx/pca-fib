@@ -70,6 +70,13 @@ struct Atom{
 	float		charge ;
 } ;
 
+struct ch_atom{
+  float charge;
+  float x;
+  float y;
+  float z;
+};
+
 struct Amino_Acid{	
 	char		res_name[4] ;
 	char		chainID[2] ;

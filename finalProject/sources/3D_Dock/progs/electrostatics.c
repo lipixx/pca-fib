@@ -85,7 +85,7 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
 
   /* Counters */
 
-  int	residue , atom;
+  int	residue , atom, n_atoms;
 
   /* Co-ordinates */
 
@@ -95,24 +95,52 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
   /* Variables */
 
   float		distance ;
-  float		phi , epsilon ;
-
+  float		phi , epsilon;
+  struct ch_atom * charged_atoms;
+  
 /************/
 
   for( x = 0 ; x < grid_size ; x ++ ) {
     for( y = 0 ; y < grid_size ; y ++ ) {
       for( z = 0 ; z < grid_size ; z ++ ) {
-
+	
         grid[gaddress(x,y,z,grid_size)] = (fftw_real)0 ;
-
+	
       }
     }
   }
 
-/************/
+  n_atoms = 0;
+  for( residue = 1 ; residue <= This_Structure.length ; residue++ ) 
+    {
+      n_atoms += This_Structure.Residue[residue].size * residue;
+    } 
+  
+  charged_atoms = malloc(sizeof(struct ch_atom)*n_atoms);
+
+  if (charged_atoms == NULL)
+    printf("ERROR on malloc, not enough memory\n");
+
+  n_atoms = 0;
+  
+  /************/
+  for( residue = 1 ; residue <= This_Structure.length ; residue++ ) 
+    {
+      for( atom = 1 ; atom <= This_Structure.Residue[residue].size ; atom++ ) 
+	{
+	  if( This_Structure.Residue[residue].Atom[atom].charge != 0 )
+	    {
+	      charged_atoms[n_atoms].charge = This_Structure.Residue[residue].Atom[atom].charge;
+	      charged_atoms[n_atoms].x = This_Structure.Residue[residue].Atom[atom].coord[1];
+	      charged_atoms[n_atoms].y = This_Structure.Residue[residue].Atom[atom].coord[2];
+	      charged_atoms[n_atoms].z = This_Structure.Residue[residue].Atom[atom].coord[3];	      
+	      n_atoms++;
+	    }
+	}
+    }
 
   setvbuf( stdout , (char *)NULL , _IONBF , 0 ) ;
-
+  
   printf( "  electric field calculations ( one dot / grid sheet ) " ) ;
 
   for( x = 0 ; x < grid_size ; x ++ )
@@ -123,42 +151,34 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
       for( y = 0 ; y < grid_size ; y ++ ) 
 	{
 	  y_centre  = gcentre( y , grid_span , grid_size ) ;
+
 	  for( z = 0 ; z < grid_size ; z ++ ) 
 	    {
 	      z_centre  = gcentre( z , grid_span , grid_size ) ;
 	      phi = 0 ;
-
-	      for( residue = 1 ; residue <= This_Structure.length ; residue++ ) 
+	      
+	      for(atom = 0; atom < n_atoms; atom++ ) 
 		{
-		  for( atom = 1 ; atom <= This_Structure.Residue[residue].size ; atom++ ) 
-		    {
-		      if( This_Structure.Residue[residue].Atom[atom].charge != 0 )
-			{
-			  distance =  sqrtf(
-					    ((This_Structure.Residue[residue].Atom[atom].coord[1]-x_centre) * (This_Structure.Residue[residue].Atom[atom].coord[1]-x_centre))
-					    + ((This_Structure.Residue[residue].Atom[atom].coord[2]-y_centre) * (This_Structure.Residue[residue].Atom[atom].coord[2]-y_centre))
-					    + ((This_Structure.Residue[residue].Atom[atom].coord[3]-z_centre) * (This_Structure.Residue[residue].Atom[atom].coord[3]-z_centre))
-					    ) ;
-
-			  if (distance < 2.0) distance = 2.0;
-
-			  if (distance >= 8.0)
-			    epsilon = 80;
-			  else
-			    if (distance <= 6.0)
-			      epsilon = 4;
-			    else
-			      epsilon = (38 * distance) - 224;
-
-			  phi += ( This_Structure.Residue[residue].Atom[atom].charge / ( epsilon * distance ) ) ; 			 
-			}
+ 		  distance =  sqrtf(((charged_atoms[atom].x - x_centre) * (charged_atoms[atom].x - x_centre))
+		      			+ ((charged_atoms[atom].y - y_centre) * (charged_atoms[atom].y - y_centre))
+		      			+ ((charged_atoms[atom].z - z_centre) * (charged_atoms[atom].z - z_centre))
+		      			) ;
+		      if (distance < 2.0) distance = 2.0;		      
+		      if (distance >= 8.0)
+			epsilon = 80;
+		      else
+			if (distance <= 6.0)
+			  epsilon = 4;
+			else
+			  epsilon = (38 * distance) - 224;
+		      
+		      phi += (charged_atoms[atom].charge / ( epsilon * distance ) ) ; 			 		    
 		    }
-		}
 	      grid[gaddress(x,y,z,grid_size)] = (fftw_real)phi ;
 	    }
 	}
-  }
-  
+    }  
+
   printf( "\n" ) ;
 
 /************/
