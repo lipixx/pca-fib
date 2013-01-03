@@ -60,7 +60,7 @@ pg:
 		make FLAGS='-g -pg'
 
 dbg:
-		make CC_FLAGS='$(FLAGS)-march=core2 -static -pthread -g'
+		make CC_FLAGS='$(FLAGS)-march=native -static -pthread -g'
 
 #############
 

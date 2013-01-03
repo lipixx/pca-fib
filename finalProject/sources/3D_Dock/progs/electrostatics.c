@@ -94,7 +94,7 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
   /* Variables */
   float	distance, phi, epsilon;
 
-  float * charges, * coords, *_charges, *_coords;
+  float * charges, * coords, *_coords;
   __m128 center;
 
 /************/
@@ -123,8 +123,6 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
   if (posix_memalign((void**)&charges,16,sizeof(float) * n_atoms) == ENOMEM)
     printf("Out of memory - posix_memalign(charges,16..)\n");
 
-  _charges = charges;
-  _coords = coords;
   n_atoms = 0;
   co = 0;
   /************/
@@ -144,8 +142,6 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
 	    }
 	}
     }
-  ///////////////////  
-  printf("co = %i, n_atoms = %i\n",co,n_atoms);
 
   setvbuf( stdout , (char *)NULL , _IONBF , 0 ) ;
   
@@ -165,32 +161,34 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
 	      z_centre  = gcentre( z , grid_span , grid_size ) ;
 	      phi = 0 ;
 	      coords = _coords;
-	      for(atom = 0, co=0; atom < n_atoms; atom++ ) 
-		{
- 		  distance =  sqrtf(((*coords - x_centre) * (*coords - x_centre))
-				    + ((*(coords+1) - y_centre) * (*(coords+1) - y_centre))
-				    + ((*(coords+2) - z_centre) * (*(coords+2) - z_centre))
-		      			) ;
-		  
-		      if (distance < 2.0) distance = 2.0;		      
-		      if (distance >= 8.0)
-			epsilon = 80;
-		      else
-			if (distance <= 6.0)
-			  epsilon = 4;
-			else
-			  epsilon = (38 * distance) - 224;
-		      coords += 4;
+	      center = _mm_setr_ps(x_centre,y_centre,z_centre,0);
 
-		      phi += (charges[atom] / ( epsilon * distance ) ) ; 			 		    
-		    }	      
+	      for(atom = 0; atom < n_atoms; atom++ ) 
+		{
+		  __m128 v0 = _mm_sub_ps(*((__m128*) coords), center); /*SEGFAULTS HERE*/
+		  v0 = _mm_mul_ps(v0,v0);
+
+		  distance = sqrtf(*((float*)&v0) + *((float*)(&v0)+1) + *((float*)(&v0)+2));
+
+		  if (distance < 2.0) distance = 2.0;		      
+		  if (distance >= 8.0)
+		    epsilon = 80;
+		  else
+		    if (distance <= 6.0)
+		      epsilon = 4;
+		    else
+		      epsilon = (38 * distance) - 224;
+
+		  coords += 4;
+		  phi += (charges[atom] / ( epsilon * distance ) ) ; 			 		    
+		}	      
 	      grid[gaddress(x,y,z,grid_size)] = (fftw_real)phi ;
 	    }
 	}
     }  
-
+  
   printf( "\n" ) ;
-
+  
 /************/
 
   return ;
