@@ -24,7 +24,7 @@ SHELL           = /bin/sh
 
 CC              = gcc
 
-CC_FLAGS        = $(FLAGS) -O3 -march=core2 -static -pthread
+CC_FLAGS        = $(FLAGS) -O3 -march=native -static -pthread
 STRIP           = strip
 
 CC_LINKERS      = -lm
