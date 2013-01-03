@@ -94,8 +94,8 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
   float	distance, phi, epsilon;
 
   float * charges, * atom_coords;
-  __mm128 center;
-  
+  __m128 center;
+  struct ch_atom *charged_atoms;
 /************/
 
   for( x = 0 ; x < grid_size ; x ++ ) {
@@ -154,8 +154,6 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
 	    {
 	      z_centre  = gcentre( z , grid_span , grid_size ) ;
 	      phi = 0 ;
-	      
-	      centres = _mm_setr_ps(x_centre,y_centre,z_centre);
 	      
 	      for(atom = 0; atom < n_atoms; atom++ ) 
 		{
