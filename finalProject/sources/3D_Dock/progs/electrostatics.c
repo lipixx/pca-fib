@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "structures.h"
-
+#include <smmintrin.h>
 void assign_charges( struct Structure This_Structure ) {
 
 /************/
@@ -84,19 +84,17 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
 /************/
 
   /* Counters */
-
   int	residue , atom, n_atoms;
 
-  /* Co-ordinates */
-
+  /* Coordinates */
   int	x , y , z ;
-  float		x_centre , y_centre , z_centre ;
+  float	 x_centre , y_centre , z_centre ;
 
   /* Variables */
+  float	distance, phi, epsilon;
 
-  float		distance ;
-  float		phi , epsilon;
-  struct ch_atom * charged_atoms;
+  float * charges, * atom_coords;
+  __mm128 center;
   
 /************/
 
@@ -157,12 +155,15 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
 	      z_centre  = gcentre( z , grid_span , grid_size ) ;
 	      phi = 0 ;
 	      
+	      centres = _mm_setr_ps(x_centre,y_centre,z_centre);
+	      
 	      for(atom = 0; atom < n_atoms; atom++ ) 
 		{
  		  distance =  sqrtf(((charged_atoms[atom].x - x_centre) * (charged_atoms[atom].x - x_centre))
 		      			+ ((charged_atoms[atom].y - y_centre) * (charged_atoms[atom].y - y_centre))
 		      			+ ((charged_atoms[atom].z - z_centre) * (charged_atoms[atom].z - z_centre))
 		      			) ;
+		  
 		      if (distance < 2.0) distance = 2.0;		      
 		      if (distance >= 8.0)
 			epsilon = 80;
