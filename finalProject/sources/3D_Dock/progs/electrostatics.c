@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "structures.h"
 #include <smmintrin.h>
+#include <errno.h>
 void assign_charges( struct Structure This_Structure ) {
 
 /************/
@@ -84,7 +85,7 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
 /************/
 
   /* Counters */
-  int	residue , atom, n_atoms;
+  int	residue , atom, n_atoms, co;
 
   /* Coordinates */
   int	x , y , z ;
@@ -93,9 +94,9 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
   /* Variables */
   float	distance, phi, epsilon;
 
-  float * charges, * atom_coords;
+  float * charges, * coords, *_charges, *_coords;
   __m128 center;
-  struct ch_atom *charged_atoms;
+
 /************/
 
   for( x = 0 ; x < grid_size ; x ++ ) {
@@ -114,13 +115,18 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
       n_atoms += This_Structure.Residue[residue].size * residue;
     } 
   
-  charged_atoms = malloc(sizeof(struct ch_atom)*n_atoms);
+   /*To store all the atoms coordinates. x4 due to x+y+z+padding, to align to 16b*/
+  if (posix_memalign((void**)&coords,16,sizeof(float) * n_atoms * 4) == ENOMEM)
+    printf("Out of memory - posix_memalign(coords,16..)\n");
 
-  if (charged_atoms == NULL)
-    printf("ERROR on malloc, not enough memory\n");
+  /*To store all the atoms charges. No need to add padding*/
+  if (posix_memalign((void**)&charges,16,sizeof(float) * n_atoms) == ENOMEM)
+    printf("Out of memory - posix_memalign(charges,16..)\n");
 
+  _charges = charges;
+  _coords = coords;
   n_atoms = 0;
-  
+  co = 0;
   /************/
   for( residue = 1 ; residue <= This_Structure.length ; residue++ ) 
     {
@@ -128,14 +134,18 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
 	{
 	  if( This_Structure.Residue[residue].Atom[atom].charge != 0 )
 	    {
-	      charged_atoms[n_atoms].charge = This_Structure.Residue[residue].Atom[atom].charge;
-	      charged_atoms[n_atoms].x = This_Structure.Residue[residue].Atom[atom].coord[1];
-	      charged_atoms[n_atoms].y = This_Structure.Residue[residue].Atom[atom].coord[2];
-	      charged_atoms[n_atoms].z = This_Structure.Residue[residue].Atom[atom].coord[3];	      
-	      n_atoms++;
+	      charges[n_atoms] = This_Structure.Residue[residue].Atom[atom].charge;
+	      n_atoms++;	
+
+	      coords[co] = This_Structure.Residue[residue].Atom[atom].coord[1];
+	      coords[co+1] = This_Structure.Residue[residue].Atom[atom].coord[2];
+	      coords[co+2] = This_Structure.Residue[residue].Atom[atom].coord[3];	      
+	      co+=4;	
 	    }
 	}
     }
+  ///////////////////  
+  printf("co = %i, n_atoms = %i\n",co,n_atoms);
 
   setvbuf( stdout , (char *)NULL , _IONBF , 0 ) ;
   
@@ -154,12 +164,12 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
 	    {
 	      z_centre  = gcentre( z , grid_span , grid_size ) ;
 	      phi = 0 ;
-	      
-	      for(atom = 0; atom < n_atoms; atom++ ) 
+	      coords = _coords;
+	      for(atom = 0, co=0; atom < n_atoms; atom++ ) 
 		{
- 		  distance =  sqrtf(((charged_atoms[atom].x - x_centre) * (charged_atoms[atom].x - x_centre))
-		      			+ ((charged_atoms[atom].y - y_centre) * (charged_atoms[atom].y - y_centre))
-		      			+ ((charged_atoms[atom].z - z_centre) * (charged_atoms[atom].z - z_centre))
+ 		  distance =  sqrtf(((*coords - x_centre) * (*coords - x_centre))
+				    + ((*(coords+1) - y_centre) * (*(coords+1) - y_centre))
+				    + ((*(coords+2) - z_centre) * (*(coords+2) - z_centre))
 		      			) ;
 		  
 		      if (distance < 2.0) distance = 2.0;		      
@@ -170,9 +180,10 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
 			  epsilon = 4;
 			else
 			  epsilon = (38 * distance) - 224;
-		      
-		      phi += (charged_atoms[atom].charge / ( epsilon * distance ) ) ; 			 		    
-		    }
+		      coords += 4;
+
+		      phi += (charges[atom] / ( epsilon * distance ) ) ; 			 		    
+		    }	      
 	      grid[gaddress(x,y,z,grid_size)] = (fftw_real)phi ;
 	    }
 	}
