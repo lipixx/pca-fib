@@ -24,7 +24,7 @@ SHELL           = /bin/sh
 
 CC              = gcc
 
-CC_FLAGS        = $(FLAGS) -O3 -march=core2 -static 
+CC_FLAGS        = $(FLAGS) -O3 -march=core2 -static -pthread
 STRIP           = strip
 
 CC_LINKERS      = -lm
@@ -58,6 +58,10 @@ g:
 
 pg:		
 		make FLAGS='-g -pg'
+
+dbg:
+		make CC_FLAGS='$(FLAGS)-march=core2 -static -pthread -g'
+
 #############
 
 ftdock:		ftdock.o $(LIBRARY_OBJECTS) structures.h
