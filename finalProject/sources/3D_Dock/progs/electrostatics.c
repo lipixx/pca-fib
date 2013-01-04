@@ -123,6 +123,7 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
   if (posix_memalign((void**)&charges,16,sizeof(float) * n_atoms) == ENOMEM)
     printf("Out of memory - posix_memalign(charges,16..)\n");
 
+  _coords = coords;
   n_atoms = 0;
   co = 0;
   /************/
