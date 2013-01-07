@@ -29,6 +29,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "structures.h"
 #include <smmintrin.h>
 #include <errno.h>
+#include <pthread.h>
+
+#define NUM_THREADS 4
+
 void assign_charges( struct Structure This_Structure ) {
 
 /************/
@@ -74,10 +78,79 @@ void assign_charges( struct Structure This_Structure ) {
 
 }
 
-
+struct th_par{
+  int n_atoms_g;
+  int xmax;
+  int xinit;
+  int grid_size_g;
+  float * charges_g;
+  float * coords_g;
+  fftw_real *grid;
+  float grid_span_g;
+};
 
 /************************/
+void * doWork(void* pars)
+{
+  int	x, y, z, xmax, xinit, atom, n_atoms,grid_size;
+  float	 x_centre , y_centre , z_centre;
+  float * charges, * coords;
+  float	distance, phi, epsilon,grid_span;
+  fftw_real *grid;
+  __m128 center;
 
+  struct th_par * p;
+  p = (struct th_par *) pars;
+
+  xmax = p->xmax;
+  xinit = p->xinit;
+  charges = p->charges_g;
+  n_atoms = p->n_atoms_g;
+  grid_size = p->grid_size_g;
+  grid_span = p->grid_span_g;
+  grid = p->grid;
+
+  for( x = xinit ; x < xmax ; x ++ )
+    {
+      printf( "." ) ;
+      x_centre  = gcentre( x , grid_span , grid_size ) ;
+      
+      for( y = 0 ; y < grid_size ; y ++ ) 
+	{
+	  y_centre  = gcentre( y , grid_span , grid_size ) ;
+
+	  for( z = 0 ; z < grid_size ; z ++ ) 
+	    {
+	      z_centre  = gcentre( z , grid_span , grid_size ) ;
+	      phi = 0 ;
+	      coords = p->coords_g;
+	      center = _mm_setr_ps(x_centre,y_centre,z_centre,0);
+
+	      for(atom = 0; atom < n_atoms; atom++ ) 
+		{
+		  __m128 v0 = _mm_sub_ps(*((__m128*) coords), center);
+		  v0 = _mm_mul_ps(v0,v0);
+
+		  distance = sqrtf(*((float*)&v0) + *((float*)(&v0)+1) + *((float*)(&v0)+2));
+
+		  if (distance < 2.0) distance = 2.0;		      
+		  if (distance >= 8.0)
+		    epsilon = 80;
+		  else
+		    if (distance <= 6.0)
+		      epsilon = 4;
+		    else
+		      epsilon = (38 * distance) - 224;
+
+		  coords += 4;
+		  phi += (charges[atom]/(epsilon * distance));
+		}	      
+	      grid[gaddress(x,y,z,grid_size)] = (fftw_real)phi ;
+	    }
+	}
+    }
+  pthread_exit(NULL);
+}
 
 
 void electric_field( struct Structure This_Structure , float grid_span , int grid_size , fftw_real *grid ) {
@@ -85,7 +158,7 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
 /************/
 
   /* Counters */
-  int	residue , atom, n_atoms, co;
+  int	residue , atom, n_atoms, co,rc,t;
 
   /* Coordinates */
   int	x , y , z ;
@@ -96,6 +169,8 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
 
   float * charges, * coords, *_coords;
   __m128 center;
+
+  pthread_t thread[NUM_THREADS];
 
 /************/
 
@@ -148,46 +223,32 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
   
   printf( "  electric field calculations ( one dot / grid sheet ) " ) ;
 
-  for( x = 0 ; x < grid_size ; x ++ )
+  struct th_par * parameters;
+
+  for (t=0;t<NUM_THREADS;t++)
     {
-      printf( "." ) ;
-      x_centre  = gcentre( x , grid_span , grid_size ) ;
-      
-      for( y = 0 ; y < grid_size ; y ++ ) 
-	{
-	  y_centre  = gcentre( y , grid_span , grid_size ) ;
+	parameters = malloc(sizeof(struct th_par));
+        parameters->n_atoms_g = n_atoms;
+	parameters->xinit = t*grid_size/NUM_THREADS;
+	parameters->xmax = grid_size/NUM_THREADS;
+	parameters->charges_g = charges;
+	parameters->coords_g = coords;
+	parameters->grid_span_g = grid_span;
+	parameters->grid_size_g = grid_size;
+	parameters->grid = grid;
+	rc = pthread_create(&thread[t], NULL, doWork, parameters);
+    }
 
-	  for( z = 0 ; z < grid_size ; z ++ ) 
-	    {
-	      z_centre  = gcentre( z , grid_span , grid_size ) ;
-	      phi = 0 ;
-	      coords = _coords;
-	      center = _mm_setr_ps(x_centre,y_centre,z_centre,0);
-
-	      for(atom = 0; atom < n_atoms; atom++ ) 
-		{
-		  __m128 v0 = _mm_sub_ps(*((__m128*) coords), center); /*SEGFAULTS HERE*/
-		  v0 = _mm_mul_ps(v0,v0);
-
-		  distance = sqrtf(*((float*)&v0) + *((float*)(&v0)+1) + *((float*)(&v0)+2));
-
-		  if (distance < 2.0) distance = 2.0;		      
-		  if (distance >= 8.0)
-		    epsilon = 80;
-		  else
-		    if (distance <= 6.0)
-		      epsilon = 4;
-		    else
-		      epsilon = (38 * distance) - 224;
-
-		  coords += 4;
-		  phi += (charges[atom] / ( epsilon * distance ) ) ; 			 		    
-		}	      
-	      grid[gaddress(x,y,z,grid_size)] = (fftw_real)phi ;
-	    }
-	}
-    }  
+  if (rc){
+    printf("ERROR; return code from pthread_create() is %d\n", rc);
+    exit(-1);
+  }
   
+  for (t=0;t<NUM_THREADS;t++)
+    {
+      pthread_join(thread[t],NULL);
+    }
+
   printf( "\n" ) ;
   
 /************/
