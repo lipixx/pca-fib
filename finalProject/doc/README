@@ -14,6 +14,18 @@ Alternative:
 1. Untar pca-fib.tar.gz
 
 
+
+Versions of every optimization step:
+
+1. hg update <rev>
+
+<Version>		   <rev>
+Original: 		c1530ef32c6c		Original code 	
+1thread+ap6:		6708ae01fae0 		Apartat 6, càlculs repetits
+1thread+ap6+vec:	a24145900eeb 		+ vectorization
+2threads:		614785785787		+ threading
+
+
 Run code:
 ---------
 
