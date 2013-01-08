@@ -1,0 +1,22 @@
+############################## PCA Final Project ##############################
+##############################  3D Dock - FFTW   ##############################
+
+Install:
+--------
+
+Latest version:
+
+1. hg clone https://code.google.com/p/pca-fib/
+
+
+Alternative:
+
+1. Untar pca-fib.tar.gz
+
+
+Run code:
+---------
+
+1. cd pca-fib/finalProject/sources/3D_Dock
+2. Run ./run.sh
+
