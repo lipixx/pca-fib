@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <errno.h>
 #include <pthread.h>
 
-#define NUM_THREADS 4
+#define NUM_THREADS 1
 
 void assign_charges( struct Structure This_Structure ) {
 
@@ -109,6 +109,8 @@ void * doWork(void* pars)
   grid_size = p->grid_size_g;
   grid_span = p->grid_span_g;
   grid = p->grid;
+
+  printf("I will do from %i to %i\n",xinit,xmax);
 
   for( x = xinit ; x < xmax ; x ++ )
     {
@@ -229,8 +231,8 @@ void electric_field( struct Structure This_Structure , float grid_span , int gri
     {
 	parameters = malloc(sizeof(struct th_par));
         parameters->n_atoms_g = n_atoms;
-	parameters->xinit = t*grid_size/NUM_THREADS;
-	parameters->xmax = grid_size/NUM_THREADS;
+	parameters->xinit = t*(grid_size/NUM_THREADS);
+	parameters->xmax = parameters->xinit + grid_size/NUM_THREADS;
 	parameters->charges_g = charges;
 	parameters->coords_g = coords;
 	parameters->grid_span_g = grid_span;
