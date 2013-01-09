@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
   char (*matrix)[N] = malloc(sizeof *matrix * N);
 
   read_matrix(matrix);
-  printf("%i",maxsum(matrix));
+  printf("%i\n",maxsum(matrix));
   /*print_matrix(matrix);*/
 
   return 0;
