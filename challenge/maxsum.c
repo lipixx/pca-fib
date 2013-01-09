@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define SUB(i,j,k) (matrix[i+k][j] - matrix[i][j])
 #define MAXN 810
+#define DEBUG 0
 
 int N;
-int matrix[MAXN][MAXN];
+short matrix[MAXN][MAXN];
 
 void read_matrix();
 void print_matrix();
@@ -15,8 +17,18 @@ int main(int argc, char *argv[])
 {
   scanf("%i",&N);
   read_matrix();
+
+#if DEBUG
+  clock_t start, end;
+  start = clock();
   printf("%i\n",maxsum());
-  /*print_matrix(matrix);*/  
+  end = clock();
+  printf("Elapsed time: %d\n",(end-start));
+#else
+  printf("%i\n",maxsum());
+#endif
+
+  //print_matrix(matrix);
   
   return 0;
 }
@@ -38,13 +50,14 @@ void print_matrix()
 
 void read_matrix()
 {
-  int i, j;
+  int i, j, r;
 
-  for(i = 1; i<=N; i++)
+  for(i = 0; i<N; i++)
     {
-      for(j  = 0; j<N; j++)
+      for(j = 0; j<N; j++)
 	{
-	  scanf("%d",&matrix[i][j]);         
+	  scanf("%i",&r);
+          matrix[i][j] = (char) r;
 	}
     }
 }
@@ -55,20 +68,22 @@ int maxsum()
   for(i = 1; i<=N; i++)
     {
       for(j = 0; j<N; j++)
-	matrix[i][j] =  matrix[i][j] + matrix[i-1][j];
+  	matrix[i][j] =  matrix[i][j] + matrix[i-1][j];
     }
 
   result = matrix[1][0];
-  for(k = 1; k<=N; k++)
+  for(k = 0; k<N; k++)
     {
       for(i = 0; i<=N-k; i++)
 	{
-	  for(x = 0, j = 0; j<N; j++)
+	  x = 0;
+	  for(j = 0; j<N; j++)
 	    {
 	      if(x >= 0)
-		x += SUB(i,j,k);
+	      	x += SUB(i,j,k);
 	      else
-		x = SUB(i,j,k);
+	      	x =  SUB(i,j,k);
+
 	      if(x > result)
 		result = x;
 	    }
