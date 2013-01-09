@@ -1,43 +1,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define max(X, Y) ((X) > (Y) ? (X) : (Y))
+#define Dif(i,j,k) (matrix[i+k][j] - matrix[i][j])
+#define MAXN 810
 
-int N;
+int N, MAX;
+int matrix[MAXN][MAXN];
 
-void print_matrix(char matrix[][N]);
-void read_matrix(char matrix[][N]);
-int maxsum(char matrix[][N]);
+void read_matrix();
+void print_matrix();
+int maxsum();
 
 int main(int argc, char *argv[])
 {
-  int i,j;
-
   scanf("%i",&N);
-  char (*matrix)[N] = malloc(sizeof *matrix * N);
-
-  read_matrix(matrix);
-  printf("%i\n",maxsum(matrix));
-  /*print_matrix(matrix);*/
-
+  read_matrix();
+  printf("%i\n",maxsum());
+  /*print_matrix(matrix);*/  
+  
   return 0;
 }
 
-void read_matrix(char matrix[][N])
-{
-  int i,j,r;
-
-  for (i=0; i<N;i++)
-    {
-      for (j=0;j<N;j++)
-	{
-	  scanf("%i",&r);
-	  matrix[i][j] = (char) r;
-	}
-    }
-}
-
-void print_matrix(char matrix[][N])
+void print_matrix()
 {
   int i,j;
   printf("\n\n ##MATRIX PRINT##\n");
@@ -52,27 +36,43 @@ void print_matrix(char matrix[][N])
   printf("##END OF MATRIX PRINT##\n");
 }
 
-int maxsum(char matrix[][N])
+void read_matrix()
 {
-  int x,y,i,j,acum,tmp,result;
-  
-  result = 0xFFFFFFFF;
+  int i, j;
 
-  for (x=0; x<N; x++)
-    for (y=0; y<N; y++)
-      {
-	acum = 0xFFFFFFFF;
-	for (i=0;i<N;i++)
-	  {
-	    tmp = 0;
-	    for (j=x;j<=y;j++)
-	      {
-		tmp += matrix[i][j];
-	      }
-	    acum = max(acum + tmp, tmp);
-	    result = max(result, acum);
-	  }
-      }
-  
-  return result;
+  for(i = 1; i<=N; i++)
+    {
+      for(j  = 0; j<N; j++)
+	{
+	  scanf("%d",&matrix[i][j]);         
+	}
+    }
+}
+
+int maxsum()
+{
+  int i, j, k, t;
+  for(i = 1; i<=N; i++)
+    {
+      for(j = 0; j<N; j++)
+	matrix[i][j] =  matrix[i][j] + matrix[i-1][j];
+    }
+
+  MAX = matrix[1][0];
+  for(k = 1; k<=N; k++)
+    {
+      for(i = 0; i<=N-k; i++)
+	{
+	  for(t = 0, j = 0; j<N; j++)
+	    {
+	      if(t>=0)
+		t+= Dif(i,j,k);
+	      else
+		t = Dif(i,j,k);
+	      if(t>MAX)
+		MAX = t;
+	    }
+	}
+    }               
+  return MAX;
 }
